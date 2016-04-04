@@ -1,0 +1,521 @@
+= Linux CLI
+
+[%hardbreaks]
+Bash (*Bourne Again SHell*) enhanced version of SHell written by Steve Bourne
+*Shell*: program taking keyboard commands and passes them to the OS to carry out
+*Terminal emulator*: GUI to interact with the shell. *konsole* for KDE and *gnome-terminal* for GNOME
+Last character of prompt : *#* is for superuser and *$* for normal one
+Remember last 500 commands by default
+`date`: display current time
+`cal`: calendar of current month
+`df`: information about drives like free space
+`free`: amount of free memory left
+
+== Important directories
+[%hardbreaks]
+`/bin`: binaries necessary for the system to boot and run
+`/boot`: linux kernel, initial RAM disk image (drivers needed at run time), boot loader.
+`/boot/grub/grub.conf` or `menu.lst` : configuration of boot loader
+`/boot/vmlinuz`: linux kernel
+`/dev`: device nodes
+`/etc`: system-wide configuration files
+`/etc/crontab`: defines when automated jobs run
+`/etc/fstab`: table of storage devices and associated mount points
+`/home`: users’ directories (root is in /root)
+`/lib`: shared lib files used by the core system programs
+`/lost+found`: in each partition/device. used in case of partial recovery from a file system corruption event. remains empty unless something bad happen
+`/media`: on modern linux systems mount points for removable media (USB, CD)
+`/mnt`: mount points on older linux
+`/opt`: optional often commercial software
+`/proc`: peepholes to the kernel
+`/root`: home dir for root account
+`/sbin`: system administration binaries
+`/tmp`: temporary files. some config emptied it at each reboot
+`/usr`: programs and support files used by regular users
+`/usr/bin`: executable programs for users
+`/usr/lib`: shared libraries for programs in /usr/bin
+`/usr/local`: programs not included with distribution but for system-wide use. /usr/local/bin for compiled programs
+`/usr/sbin`: more system administration binaries
+`/usr/share`: shared data used by /usr/bin (config files, icons…)
+`/usr/share/doc`: documentation for those programs
+`/var`: /tmp, /home don’t change. this is likely to and contains DB, spool files, user mail
+When listing files *l means symbolic* (soft) link. Use: versioning of a shared resource. Using symbolic link, point to the right version without changing the programs using it.
+
+== Files
+[%hardbreaks]
+`pwd`: current dir
+`cd, ls`
+Hierarchical dir structure, root dir is the first in file system
+*Linux has single file system* unlike Windows no matter how many drives are connected (mounted)
+`less`: view file contents. replace earlier Unix program more (less is more)
+`file`: determine file type
+`ls -A`: almost all, not . and ..
+`ln`: create links (hard or soft). `-s` for soft ones.
+*Hard links cannot reference a file outside its own file system* (for example not in the same disk partition). May not reference a directory. Each file has at least one hard link that gives the file its name. Hard links are undistinguishable from the file itself and there are no special indication unlike for soft ones.
+*Symbolic link are more modern and flexible*. Writing to the soft link affects the pointed resource. When deleted, only the link is deleted. When file is deleted before link, it is considered broken and when listed, appears in a special color.
+`cp -u *.html destination`: use of wildcards
+
+=== Wildcards
+[%hardbreaks]
+? (any character), * (any characters), [abc] (any character matching a, b or c), [!abc] (any character which is not a, b or c), [:alnum:], [:alpha:], [:digit:], [:lower:], [:upper:], [0-9] (a number between 0 and 9 included)
+Those can be used with any commands accepting filenames as arguments
+There is no undelete command.
+Always test first wildcard with ls before using it with rm.
+`wc`: print newline, word and byte counts for each file
+`head/tail`: first/last part of a file
+`tee`: read from standard input and write to standard output and files
+`> output.txt`: create or truncate a new file output.txt
+`ls >> ouput.txt`: append ls result to output.txt
+`ls -l /bin/usr 2> ls-error.txt`: redirection of standard error example
+`ls -l /bin/usr > ls-error.txt 2>&1`: redirection of standard error and standard output to file
+`ls -l /bin/usr &> output.txt / ls -l /bin/usr &>> output.txt`: combined redirection
+`ls -l /bin/usr 2> /dev/null`: redirect to the device which accepts bits but does nothing with it
+`cat`: concatenate files. When given no argument, wait for standard input and end when Ctrl+D
+*-: regular file*, *d: directory*, *l: symbolic link* (permissions are dummy and always rwxrwxrwx), *c: character special file* (device handling data as streams of bytes as a terminal or modem), *b: block special file* (device handling data as blocks as HDD, CD-ROM)
+
+== Command information
+[%hardbreaks]
+`info command_name`: command’s info entry
+`whatis command_name`: brief description of a command
+`which command_name`: which command line will be executed
+`type command_name`: information about a command (shell builtin, alias, in /bin…)
+`history`: kept in .bash_history in home directory for user
+`alias foo='cd /usr; ls; cd -'`: create alias for a command sequence
+`unalias foo`: remove alias
+`alias`: list all aliases
+
+=== Manipulate lines and text
+[%hardbreaks]
+`grep`: print lines matching a pattern
+`sort`: sort lines of text
+`uniq`: report or omit repeated lines
+`echo Front-{A,B,C}-Back`: Front-A-Back Front-B-Back Front-C-Back
+double quotes used with echo makes all shell’s special characters lose their meaning except $, \, \`. Single quotes suppress all expansions even for $, \ and `.
+\a makes the computer beep.
+`cut -f 3 distr.txt`: extrait le 3e champs des lignes du fichier (séparation par défaut la tabulation)
+`cut -c 7-10`: extrait les caractères 7 à 10
+`paste` sert à concaténer des fichiers ligne par ligne
+`join` fait la même chose que paste mais en utilisant par défaut la première colonne comme clé de ligne
+`comm` compare des fichiers en 3 colonnes : celle de gauche pour les lignes qui n’appartiennent qu’au premier fichier, celle du milieu pour les lignes communes et celle de droite pour les lignes qui n’appartiennent qu’au second
+`comm -12 f1.txt f2.txt` : affiche les lignes qui n’appartiennent qu’à f2 (l’option supprime les 1ère et 2e colonne ne laissant que la 3e)
+`diff` est plus puissant que comm en permettant de traiter des arborescences de fichiers et avec un affichage des différences plus fin
+`patch` applique des changements sur des fichiers et est utilisé en complément de diff
+....
+diff -Naur old_file new_file > diff_file
+patch < diff_file
+....
+`tr` permet de transformer des caractères sur un flux à la volée
+`echo "lowercase letters" | tr a-z A-Z`
+
+`ls -l 'which cp'`: makes which cp interpreted because of back quotes and ls -l runs against the result fo this evaluation
+
+==== Moving cursor
+[%hardbreaks]
+`Ctrl-a`: beginning of the line
+`Ctrl-e`: end of the line
+`Ctrl-f`: one character forward
+`Ctrl-b`: one character backward
+`Alt-f`: move forward one word
+`Alt-b`: move backward one word
+`Ctrl-l`: same as clear
+`Alt-l`: from cursor to end of word lowercase
+`Alt-u`: from cursor to end of word uppercase
+`Ctrl-k`: kill text from cursor to end of line
+`Ctrl-u`: kill text from cursor to beginning of line
+`Alt-d`: kill text from cursor to end of current word
+`Alt-Bckspc`: kill text from cursor to beginning of current word. if beginning kill the previous word
+
+== Permissions
+[%hardbreaks]
+`id`: user identity
+`umask`: set default file permissions
+`su`: run as another user
+`sudo`: execute command as another user
+`chown, chgrp`
+`passwd`: change user password
+*Owner|Group|World: permissions order*
+u: owner, g: group owner, o: others or world, a: all.
+`chmod u+x`: add execution right to owner
+`chmod o-wx`: remove write and execution rights to others
+`chmod u+x, go=rx`: add execution to owner and set for group and others rights to read and execute
+`--recursive` is effective on both directories and files
+`su -l/- user`: login shell to connect as user
+`su -`: connect as superuser
+`su -c 'command'`: execute single command instead of starting new interactive command
+About sudo
+`sudo` allow ordinary user to execute commands as an other user (usually superuser) in controlled way (restricted to specific commands for example). sudo does not require superuser’s password.
+`sudo -l`: displays what rights are granted by sudo
+
+== Processes and resources
+[%hardbreaks]
+`ps`: snapshot of current processes
+`top`: display dynamically tasks
+`jobs`: jobs launched from our terminal (like programs launched in BG)
+`bg, fg`: place job in background/foreground
+`kill`: send signal to process
+`killall`: kill processes by name
+`shutdown`: shutdown or reboot
+
+=== About ps
+[%hardbreaks]
+x option show all programs regardless of what terminal they are controlled by.
+*STAT column for state*: R (running), S (sleeping, waiting for keystroke or network packet), D (uninterruptible sleep, waiting for I/O such as disk or drive), T (instructed to stop), Z (defunct or zombie process), < (high priority process, high priority is less nice as it takes more of CPU’s time), N (low priority, nice process and gets processor time after higher priority processes)
+ps aux
+*VSZ column*: virtual memory size
+*RSS column*: Resident set size. Amount of RAM used in kilobytes.
+*START column*: start time
+
+`xlogo &`: launch xlogo in BG
+`fg %1:` put in foreground the job listed in position 1 by jobs command
+`Ctrl+C`: terminate a foreground process
+`Ctrl+Z`: stop/pause a foreground process
+
+=== About kill
+[%hardbreaks]
+Send signals to program. `Ctrl+C/Z` also send signals, respectively *INT (interrupt)* and *TSTP (terminal stop)*.
+kill -signal PID...
+*2 (INT)*: usually terminate the program
+*3 (QUIT)*: quit
+*9 (KILL)*: programs can ignore signals sent to them, but this one is not sent, the kernel immediately terminate the process. The program has no opportunity to clean up or save its work
+*11 (SEGV)*: Segmentation Violation. Sent if a program makes illegal use of memory (write somewhere it is not allowed to)
+*15 (TERM)*: default signal. If the program is still alive enough, it will terminate
+*18 (CONT)*: continue. Restore a program after a STOP.
+*19 (STOP)*: pause a program without terminating it.
+*20 (TSTP)*: Terminal stop <==> Ctrl + z. The program may choose to ignore it.
+*28 (WINCH)*: Window change. When window change sizes. top and less redraw their size when receiving this signal
+
+[%hardbreaks]
+`killall` send signal to multiple processes matching a specified program not a PID.
+`pstree` outputs a process list arranged in a tree-like pattern (parent/child relationships between processes)
+`vmstat` output a snapshot of system resource usage (mem, swap and disk I/O)
+`xload` draws a graph in graphical program showing system load over time
+`tload` draws the same graph but in terminal
+
+== Environment
+[%hardbreaks]
+`printenv`: print part or all of the environment
+`set`: set shell options
+`export`: export env to subsequently executed programs
+`alias`: alias for command
+
+[%hardbreaks]
+Interesting env variables
+`DISPLAY`: name of display if running a graphical environment.
+`EDITOR`: name of program to be used for text editing
+`SHELL`: name of shell program
+`LANG`: character set and collation order of your language
+`OLD_PWD`: previous working directory
+`PAGER`: name of program used for paging output. often /usr/bin/less.
+`PATH`: colon separated list of directories that are searched when you enter the name of an executable program
+`PS1`: Prompt String 1, content fo shell prompt. can be extensively customized
+`PWD`: current working directory
+`TERM`: name of your terminal type
+`TZ`: timezone
+`USER`: username
+`HOME`: user home directory
+Some are missing depending on the distribution.
+
+[%hardbreaks]
+`/etc/profile`: global configuration script that applies to all users.
+`~/.bash_profile`: user’s startup file. Override the global config. This is the one that should be changed when adding directories in PATH or define additional env var.
+`~/.bash_login`: loaded if previous file is not found
+`~/.profile`: loaded if neither of the previous is loaded
+Les sessions shell sans login lisent dans l’ordre :
+`/etc/bash.bashrc`
+`~/.bashrc`
+
+`export` command makes an env var available for its child processes.
+
+[%hardbreaks]
+*gedit, kedit, kwrite* and *kate* are graphical text editors
+*nano, vi(m)* and *emacs* are text based text editors
+*vim* : Vi IMproved
+Popular extensions of *backup files*: *.bak, .sav, .old, .orig*
+
+`source .bashrc`: force bash to execute .bashrc
+
+== VI
+[%hardbreaks]
+`:q`, `:q!`
+*esc twice if lost*
+`:w` writes. optionally takes a file name to save in another file than the one under modification.
+
+=== Moves cursor
+[%hardbreaks]
+`0` to the beginning of the line
+`^` to the 1st non whitespace character on the current line
+`$` to the end of the current line
+`w` to the beginning of the next word or punctuation character
+`W` to the beginning of the next word ignoring punctuation character
+`b` to the beginning of the previous word or punctuation character
+`B` to the beginning of the previous word ignoring punctuation character
+`Ctrl-f` page down
+`Ctrl-b` page up
+`numberG` to line number
+`G` to the last line
+`5j` moves the cursor five times left as j moves the cursor left
+`a` moves the cursor to the end of the line
+`A` moves the cursor to the end of the line and start appending. Can be used instead of i.
+`o` open the line below the cursor for insertion
+`O` open the line below the cursor for insertion
+
+=== Delete
+[%hardbreaks]
+`x` the current character
+`3x` the current character and the next 2
+`dd` the current line
+`5dd` the current line and the next 4
+`dW` from the current cursor location to the next word
+`d$` from the current cursor location to the end of the line
+`d0` from the current cursor location to the beginning of the line
+`d^` from the current cursor location to the first non-whitespace character
+`dG` from the current line to the end of the file.
+`d20G` from the current line to the 20th
+
+=== Copy and Paste
+[%hardbreaks]
+`y` as yank (copy) and paste
+`yy` the current line
+`5yy` the current line and the next 4
+`yW` from the current position to the beginning of the next word
+`y$` from the current position to the end of the line
+`y0` from the current position to the beginning of the line
+`y^` from the current position to the first non-whitespace character
+`yG` from the current line to the end of the file
+`y20G` from the current line to the 20th line
+`p` to paste
+`J` join current line with the next line
+
+=== Search and replace
+[%hardbreaks]
+`f` to search a character ; to repeat the search
+`/` to search a word in the entire file. Allows regular expressions. n to move to next occurrence
+`:%s/Line/line/g`
+`:` starts an ex command
+`%` range of lines. without anything specified it goes from first to last. 1,$ from 1 to end of file
+`s` is the operation (substitution)
+`/Line/line` search pattern and replacement text
+`g` means global. If omitted only the first instance of the search string on each line is replaced.
+You can add a c after g to ask for user confirmation before operation on each match. y means perform the operation, n skip, a perform on all, q quit, l perform this substitution and quit (last), Ctrl-e, Ctrl-y (scroll down and up to view the context of substitution)
+
+=== Handle multiple files
+[%hardbreaks]
+`vi` file1 file2… :  open several files at a time.
+`:n` Next file on screen
+`:N` previous file on screen
+vi does not switch with unsaved changes. Put ! to force the switch that will also abandon unsaved changes.
+`:buffers` to display list of files edited
+`:buffer 2` switch to file n° 2 listed by buffers ex command
+`:e ls-output.txt` opens new file
+`:r foo.txt` paste file content before cursor position
+
+== The prompt
+[%hardbreaks]
+Special characters that can be used for prompt
+`\a` ASCII bell, makes computer beep when encountered
+`\d` Current date in « Mon May 26 » format
+`\h` hostname minus the trailing domain name
+`\H` full hostname
+`\j` Number of jobs running in the current shell session
+`\l` Name of the current terminal device
+`\n` Newline character
+`\r` Carriage return
+`\s` Name of the shell program
+`\t` current time in 24 hour format
+`\T` current time in 12 hour format
+`\u` username of the current user
+`\v` version number of the shell
+`\V` version and release numbers of the shell
+`\w` Name of the current working directory
+`\W` last part of the current working directory
+`\!` history number of the current command
+`\#` number of commands entered during this shell session
+`\$` displays $ for a normal user and # for a superuser
+`\[` signals the start of a series of non-printing characters
+`\]` signals the end of the series
+PS1 may also be colored (forefront and background) with escape sequences like
+`\033[0;30m` Black
+Cursor can also be positioned to provide information with escape sequences
+Prompt can even embed functions and scripts
+See http://ltdp.org/HOWTO/Bash-Prompt-HOWTO/
+
+== Package management
+[%hardbreaks]
+Having access to precompiled packages.
+*.deb* for the Debian camp (Ubuntu) and *.rpm* for Red Hat (Fedora, CentOS, RHEL, OpenSUSE, Mandriva).
+Package are made available through central repositories especially build and maintained for the distribution. Several different repositories for different stages of the software development life cycle (like testing). Also third-parties repos (for legal reason like patents).
+[]
+.Package Tools
+|===
+|Low-Level tool |High-Level tool |Family
+|dpkg |apt-get, aptitude |Debian
+|rpm |yum |Red Hat
+|===
+`dpkg --list / rpm -qa` to list installed packages
+`dpkg —status package_name / rpm -q package_name` to display whether a package is installed
+`apt-cache show package_name / yum info package_name` to display info about a package
+`dpkg —search file_name / rpm -qf file_name` to display which package is responsible for the installation of a particular file
+
+== Storage media
+[%hardbreaks]
+`mount/umount` to mount/unmount a file system
+`fsck` to check and repair a file system
+`mkfs` create a file system
+`fdisk` to manipulate partition table
+`dd` to write block oriented data directly to a device
+`genisoimage/mkisofs` to create an ISO 9660 image file
+`md5sum` to compute an MD5 checksum
+
+`/etc/fstab file` lists the devices that are to be mounted at boot time.
+1st column is the actual name of the device. 2nd is the mount point. 3rd is the file system type (ext3). Then comes the options column, frequency and finally the order (in which order file systems should be checked with fsck).
+
+`mount` without argument will display a list of the fs currently mounted
+`-t` option is used to specify the file system type
+
+buffers are used to cope with slow devices. They are used to avoid waiting for the device when data are sent to it. They allocate RAM where data are sent quickly so that the computer can go back to other tasks. Meanwhile the buffer slowly spools the data to the device. Linux buffers as much as it can as this buffering allows writing to storage devices very quickly. Unmounting a device entails writing the remaining data to the device so that it can be safely removed otherwise we can encounter file system corruption.
+
+[%hardbreaks]
+`/dev/fd*`: floppy disk drives
+`/dev/hd*`: IDE (PATA) disks on older systems
+`/dev/lp*`: printers
+`/dev/sd*`: on recent Linux systems, the kernel treats all disk-like devices (flash, SATA, usb mass storages, camera, music players...) as SCSI disks.
+`/dev/sr*`: optical drives (CD/DVD)
+There are also convenient symbolic links pointing to the actual devices (/dev/cdrom, /dev/dvd, /dev/floppy)
+
+`tail -f /var/log/messages` is a great way to watch what the system is doing in near real time.
+
+[%hardbreaks]
+`fdisk /dev/sdb` opens fdisk program for this device. This tool can edit delete and create partitions.
+`mkfs -t ext3 /dev/sdb1` to create a ext3 file system on partition /dev/sdb1
+`fdformat /dev/fd0` to format /dev/fd0
+`dd if=input_file of=output_file [bs=block_size [count=blocks]]` copies blocks of data from if to of. Can be used to copy entirely a disk’s data to another one. Be careful with if, of as it can destroy a disk if you invert them.
+`dd if=/dev/cdtom of=ubuntu.iso` to create an iso. Works for DVD but not audio CDs as they do not use a file system. Use cdrdao command.
+`genisoimage -o cd-rom.iso -R -J ~/cd-rom-files` creates an ISO cd-rom.iso from files in ~/cd-rom-files.
+`mkdir /mnt/iso_image; mount -t iso9660 -o loop image.iso /mnt/iso_image` to mount an ISO.
+`wodim dev=/dev/cdrw image.iso` to write an ISO on a CD.
+`md5sum image.iso` to compute ISO checksum and compare it with thte value supplied by the publisher
+
+== Network
+[%hardbreaks]
+`ping linuxcommand.org` to send packets at a specified interval to host until it is interrupted. Send a special packet called IMCP ECHO_REQUEST. It prints performance statistics. Successful if 0% packet loss and elements of network (cards, cabling, routing, gateways) are in good working order.
+`traceroute slashdot.org` lists the hops from the local system to the specified host.
+`netstat -ie` displays the network interfaces in our system.
+`netstat -r` displays the kernel routing table.
+
+[%hardbreaks]
+`ftp fileserver to connect to host fileserver. Authentication may follow
+cd, ls are available on remote system
+`lcd one_location`: change local working directory to one_location
+`get file_name`: transfer the file to local working directory
+`bye`: log off the remote session
+`help`: list the supported commands
+*lftp* is much like FTP with additional features, auto retry on failed downloads for example
+
+`wget http://www.google.com`: download content
+
+[%hardbreaks]
+`ssh host` to open remote secure connection to a remote host
+`ssh remote-sys ‘ls *’ > dirlist.txt`: execute ls * on the remote and put the result in dirlist.txt. Single quote to perform expansion on remote machine not locally.
+`ssh -X remote_sys and then xload`: launch X client (graphical application) on a remote system running an X server. Once xload is executed, remote system window appears on the local system.
+`scp remote-sys:document.txt` to make a remote secure copy of a document. scp is part of OpenSSH package.
+`sftp` for secure ftp.
+
+== Searching for files
+[%hardbreaks]
+`locate bin/zip` performs a rapid DB search of pathnames and outputs every name that matches the substring.
+`slocate` and `mlocate` are its modern counterparts and are usually accessed through symbolic links named locate.
+locate DB is create by `updatedb`. It is updated with a cron job. It also can be run manually as a superuser.
+
+[%hardbreaks]
+`find` search in one or more directories.
+`find ~ | wc -l` counts the number of files in home directory.
+`find ~ -type d | wc -l` counts the number of directories
+`find ~ -type f | wc -l` counts the number of files
+File types : b is block special device file, c character special device file, l symbolic link.
+`find ~ -type f -name "*.JPG" -size +1M | wc -l` counts the number of jpg files with a size above 1M (the plus sign).
+*Units*: b for 512-byte blocks (default unit), c for bytes, w for 2-bytes words, k for kilobytes, G for gigabytes.
+*Options*: -cmin n for files or directories whose contents or attributes were last modified n minutes ago (can be used with + or - ) ; -cnewer file for files or directories whose contents or attributes were last modified more recently than file ; -ctime n for files or directories whose contents or attributes were last modified n*24 hours ago ; -empty for empty files or directories ; -group name for files or directories belonging to group (name or ID) ; -iname pattern like name but case insensitive ; -inum n for files with inode n ; -mmin n for files or directories whose contents were last modified n minutes ago ; -mtime n like ctime but only for contents ; -newer file like cnewer but for contents only, useful for backup scripts ; -nouser for files or directories that do not belong to a valid user ; -nogroup like -nouser for groups ; -perm mode for files or directories whose permissions match mode ; -samefile name for files sharing the same node number as file name ; -size n for files of size n ; -user name for files or directories belonging to user name ; -depth to process directory files before directory itself ; -maxdepth maximum level find will descend ; -mindepth minimum levels it will descend before performing actions ; -mount to not traverse directories mounted on other file systems
+Find uses logical operators for options -and ou -a, -or ou -o, -not ou !, ().
+`find ~\( -type f -not -perm 0600 \) -or \(-type d -not -perm  0700 \)`
+Evaluation rules for logical operators are respected. These rules can be used to improve performance (use -and for fast return for example)
+`find ~ -print -and -type f -and -name '*.BAK'`
+Predefined actions : -delete ; -ls ; -print the default action ; -quit once a match has been made. Use delete with extreme caution, always test it first.
+-exec for user defined actions. -ok instead of -exec for prompt before execution.
+`find ~ -type f -name '*.BAK’ -exec ls -l '{}' ';'`
+By changing ; to +, the -exec command is run with a list of argument instead of being executed for each match
+`find ~ -type f -name '*.BAK’ -exec ls -l '{}' '+'`
+
+xargs converts input from standard input into an argument list for a specified command
+`find ~ -type f -name '*.BAK’ -print | xargs ls -l`
+
+== Compression
+2 types : *lossless* and *lossy*
+
+[%hardbreaks]
+`gzip, gunzip` to zip and unzip. It replaces the original file with the compressed one
+Options : -c write to standard output and keep original files ; -d decompress and act like gunzip ; -f force compression even if file’s compression version already exists ; -l displays compression statistics ; -r recursively compress files within directories ; -t test integrity of compressed file ; -number from 1 (fastest, least compression) to 9 (slowest, most compression), default value is 6.
+`ls -l /etc | gzip > foo.txt.gz` : compressed version of a directory listing
+`zcat` == gunzip -c zcat can be used like cat on gzip compressed files
+There also is `zless` program
+
+`bzip2` achieves higher levels of compression at the cost of compression speed. It produces files with bz2 extension.
+
+Compression on an efficiently compressed file (like jpg) results in a larger file because compression involves an overhead added to the file describing the compression and no redundant information is available for compression.
+
+[%hardbreaks]
+Archiving consists in gathering many files up and bundling them together into a single large file.
+tar is the classical tool for archiving files.
+*.tar* for archive and *.tgz* for archived and gzipped file.
+Options: c create archive from a list fo files and/or directories ; x extract an archive ; t list the contents of an archive
+
+[%hardbreaks]
+`zip` is both a compression tool and an archiver. unzip command to uncompress and unarchive.
+It updates existing archives instead of replacing them (tar).
+`unzip -l` to list the content of an archive without extracting.
+`ls -l /etc/ | zip les-etc.zip -` compress the directory listings. - character is used to specify zip we want to use standard output.
+unzip can also be piped.
+
+[%hardbreaks]
+Synchronization is useful when it comes to making backup copy of a system.
+rsync options source destination
+Source and destination can be remote/local files or directories. Remote file form [user@]host:path, remote rsync server rsync://[user@]host[:port]/path.
+Either source or destination must be a local file. Remote to remote is not supported.
+Options: -a for archiving causes recursion and preservation of file attributes ; -v for verbose ; —delete to delete in destination files that no longer exists in source ; —rsh to specify remote shell (ssh)
+When source is modified we run rsync and it detects changes and save them in destination.
+
+== Regular expressions
+[%hardbreaks]
+grep: global regular expression print. It searches text files for the occurrence of a specified regex.
+-i for ignore case
+-v for invert match
+-c print the number of matches
+-l print the name of each file containing a match
+-n prefix each matching line with the line number
+-h suppress the output of filenames for multi-file searches
+
+[%hardbreaks]
+`grep -h '.zip' dirlist*.txt` search for any line in dirlist files matching the regular expression .zip, any character before zip (unzip, gzip for example).
+^ for the beginning of the line and $ for the end of the line.
+`'^$'` matches blank lines.
+`[bg]` is matched by b or g.
+`[^bg]` for any character which is not b or g.
+`[A-Z]` any uppercase character.
+`[A-Za-z0-9]` any digit or character.
+`ls /usr/sbin/[A-Z]*` list any file in sbin whose name begins with a character (depends on collation). In UTF-8, it means all characters except a because the order is aAbBcCdDeEfFgGhHiIjJkKlLmMnNoOpPqQrRsStTuUvVwWxXyYzZ
+
+=== Character classes
+[%hardbreaks]
+[:alnum:] alphanumeric characters, [:word:] same than alnum plus underscore character, [:alpha:] only letters, [:blank:] includes space and tab characters, [:cntrl:] ASCII control characters, [:digit:], [:graph:] visible characters (33 through 126), [:lower:], [:punct:], [:print:] all printable so graph and space, [:space:] == [\t\r\n\v\f], [:upper:], [:xdigit:] hexadecimal.
+POSIX is the LANG for ASCII character set.
+POSIX splits regex into 2 kinds: basic (BRE) and extended (ERE).
+Special characters with BRE: ^ $ . [ ] *
+Special characters with ERE contains BRE ones and: ( ) { } ? + |
+Vertical bar is a logical OR
+`?`: 0 or once
+`*`: 0 or more times
+`+`: 1 or more times
+`{n}`: exactly n times
+`{n,m}`: between n and m times
+`{n,}`: at least n times
+`{,m}`: at most m times
+*regex can be used with locate, find, less, vim, ls*
