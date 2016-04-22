@@ -37,6 +37,7 @@ Les 2 catégories de technologies packet switched (selon capacité et usage) : W
 Les débits typiques pour le premier de 100Mbps à 10 Gbps avec des délais allant de quelques ms à plusieurs dizaines de secondes et pour le second de 1 Gbps à 10 Gbps pour des 1/10e de ms à 10 ms.
 
 Ethernet : techno la plus populaire pour du LAN. 2 versions utilisées actuellement GigE (1 Gigabit Ethernet) et 10GigE.
+
 image::internetworking_tcp_ip/switch.png[Switch]
 
 Le switch est un appareil électronique résidant dans une armoire de branchement. Quand on utilise du cuivre, les câbles ne doivent pas dépasser 100m. Chaque ordi a un NIC (Network Interface Card) qui reçoit et envoie les paquets.
@@ -48,6 +49,7 @@ IEEE définit une adresse MAC sur 48 bits qui est utilisée par Ethernet et d’
 MAC fournit 3 types d’adresses : unicast, broadcast (que des 1) et multicast.
 Un multicast est une forme limitée de broadcast qui est un sous ensemble de machines dans un réseau. TCP/IP utilise multicast et IPv6 en dépend.
 Une frame Ethernet fait entre 64 et 1514 octets.
+
 image::internetworking_tcp_ip/ethernet_frame.png[Ethernet Frame]
 
 Les 3 premiers champs constituent l’en-tête.
@@ -72,11 +74,13 @@ En fait son comportement est plus intelligent pour savoir quel paquet faire suiv
 Cela permet au bridge d’être transparent et automatique et d’améliorer la performance.
 
 Les réseaux sont sujet à congestion et perte de paquets. Dans l’exemple ci-dessous si chacun des ordinateurs opère à 1Gbps, le destinataire C ne peut consommer que la moitié de ce qui lui est envoyé. On a donc une congestion au niveau du switch, qui commencera à rejeter des paquets dès que ses buffers seront pleins.
+
 image::internetworking_tcp_ip/congestion.png[Switch]
 
 == Concept d’Internetworking et modèle architectural
 Jusqu’à présent que les détails bas niveau. Le but de cette partie, décrire un schéma nous permettant de connecter les différentes technologies réseau en un tout coordonné, un système cachant les détails du matériel réseau en dessous.
 La première méthode utilisée par les designers pour interconnecté était au niveau application. Par ex, chaque fournisseur de mails avait ses propres conventions. Pour les communications entre fournisseurs, la communication était traduite par un logiciel tournant sur un ordi connecté aux 2 systèmes.
+
 image::internetworking_tcp_ip/old_email_systems.png[Old email systems]
 
 Cette application devait à la fois comprendre les détails des connexions réseau et les protocoles de message.
@@ -96,6 +100,7 @@ Cette notion d’internet unifié inclut aussi l’idée d’indépendance entre
 
 2 réseaux ne peuvent être physiquement directement reliés et cela ne répond pas au principe d’interconnexion évoqué. Pour cela des ordinateurs spéciaux sont requis ayant la volonté de transmettre les paquets. Ce sont des routeurs internet ou routeurs IP.
 Ces routeurs ont pour destination un réseau pas un ordinateur en particulier. La quantité des informations qu’il a à retenir est proportionnelle au nombre de réseaux (bien moins important que le nombre d’ordinateurs).
+
 image::internetworking_tcp_ip/internet.png[Internet]
 (a) représente la vision de l'utilisateur, internet comme un système unifié. (b) montre les interconnexions routeurs/réseaux.
 Les applications comme les réseaux physiques ne savent les uns des autres, les derniers se contentant de transporter des paquets.
@@ -105,8 +110,10 @@ Ce système est très similaire à un réseau de routes locales se connectant à
 Les protocoles permettent de spécifier et comprendre une communication sans connaître les détails d’implémentation d’un fournisseur particulier. Le format d’une trame Ethernet fait partie d’un protocole.
 La communication sur un réseau est complexe et impacté par de nombreux problèmes : la panne de matériel, la congestion du réseau à cause de sa capacité finie, les retard ou perte de paquets, la corruption de données à cause d’interférences électriques ou magnétiques, la duplication de données ou les arrivées inversées de données.
 Etant conséquents, ces problèmes ne peuvent être résolus qu’en les gérant séparément.
+
 image::internetworking_tcp_ip/layers.png[Couches]
 Le premier modèle en couches débouche d’un travail préliminaire de l’International Organisation for Standardization. Il préempte les travaux sur Internet mais ne les décrit pas bien et contient des couches qui ne sont pas exploitées par TCP/IP.
+
 image::internetworking_tcp_ip/layers_7_version.png[Couches première version]
 
 === L’exemple X.25
@@ -120,6 +127,7 @@ La *couche de présentation* standardise le format de données que les applicati
 La *couche de présentation* concerne les applications utilisant le réseau (SMTP, FTP…).
 
 TCP/IP définit un modèle sur 5 couches mais qui ne découle d’un corps de standardisation formel mais de chercheurs qui ont conçu Internet.
+
 image::internetworking_tcp_ip/layer_5_version.png[Couches dernière version]
 Les utilisateurs utilisent des applications accédant à des services par l’internet TCP/IP.
 La *couche d’application* interagit avec celle de transport en envoyant/recevant des données. Chaque application choisit le style de transports (séquences de messages ou flux continu d’octets).
@@ -127,54 +135,73 @@ La *couche de transport* fournit la communication d’une application à une aut
 La *couche internet* s’occupe de la communication d’ordinateur à ordinateur. Elle accepte la requête d’envoi de paquet avec une identification de l’ordinateur destinataire. Elle encapsule le paquet de transport dans un paquet IP, remplit les headers et l’envoie directement à la destination ou à un routeur intermédiaire. Cette couche reçoit également des paquets, vérifie leur validité et utilise un algo décidant si le paquet doit être traité localement ou envoyé au prochain point. Pour les paquets destinés à la machine, il détermine quel protocole de transport sait traiter le paquet.
 La *couche d’interface réseau* accepte des paquets IP et les transmet sur un réseau spécifique. C'est un driver  (sur un LAN) ou un sous-sytème complexe implémentant un protocole data link. Certains pro du réseau ne les distingue et utilise les termes couche MAC ou couche data link.
 Chaque couche prend des décisions sur la justesse du message et choisit l’action appropriée en se basant sur le type du message ou l’adresse de destination.
+
 image::internetworking_tcp_ip/layers_5_in_practice.png[Couches dernière version en pratique]
+
 Un exemple de message transmis bout à bout.
+
 image::internetworking_tcp_ip/message_transmission_E2E.png[Message transmission]
+
 Contrairement au modèle X.25 où l’intelligence est localisée dans les switchs, ce modèle place beaucoup moins d’intelligence dans le réseau et plus dans les systèmes clients (les ordinateurs des utilisateurs). Ces derniers comprennent les couches 2 et 3. TCP/IP peut être vu comme un simple système de livraison de paquets auquel s’attache l’intelligence des hôtes qui y sont connectés.
 Les protocoles en couche sont conçus afin que la couche n de la destination reçoivent exactement le même objet que la couche n de la source.
 Ce principe offre une *indépendance de conception des protocoles*. On peut alors se concentrer sur une couche en faisant abstraction des autres sachant qu'elles n’altèreront pas le message.
 Un *protocole est dit E2E* s’il fournit une communication de la source à la destination. Les autres sont appelés machine à machine car la couche n’assure qu’un hop réseau.
+
 image::internetworking_tcp_ip/machine_and_e2e_layers.png[Machine to machine and e2e layers]
+
 La figure montre que les couches interface de réseau et internet sont machine à machine tandis que les autres sont E2E.
 La couche internet assure qu’un paquet IP parte de la source à la destination. Mais le paquet contenant des champs comme le time to live qui change chaque fois que le paquet est passé à un routeur, la destination ne voit finalement pas le même paquet que la source (http alors ?).
 La technologie matériel utilisé dans la plupart des réseaux garantit que tous les ordinateurs attachés puissent atteindre les autres ordinateurs directement. Mais dans les technos radio comme ZigBee, ce n’est pas le cas, dû notamment aux interférences.
 Chaque radio n’atteint qu’un sous-ensemble de noeuds et un circuit digital ne relie que 2 radios. On parle alors de *réseau mesh* caractérisant un système communication constitué de plusieurs liens individuels.
 Ce réseau mesh peut être vu de 2 façons dans le modèle en couche en fonction de la façon dont il fait suivre les paquets. Si c’est sur la couche 2, le mesh peut être modélisé comme un seul réseau physique. On parle alors de *mesh under*. Si IP se charge de faire suivre les paquets, le mesh est modélisé comme un réseau individuel, on parle de *IP route-over* ou simplement *route-over*. C’est ce que la plupart des réseaux d’ISP utilisent.
 Zigbee peut être configurer pour travailler en mesh under ou former des liens individuels et laisser IP se charger du forwarding.
+
 image::internetworking_tcp_ip/intranet_sub_layer.png[Sous-couche Intranet]
+
 Introduction de la sous-couche intranet pour du forwarding point à point
 Zigbee utilise un protocole de routage spécial qui apprend les destinations dans le mesh et configure ensuite l’IP forwarding vers les différents liens. Le principal désavantage est que ça démultiplie les routes au niveau IP (une pour chaque paire), créant une table de routage beaucoup plus grosse que nécessaire.
 Le principal défaut du mesh under est qu’il crée une table séparée pour faire suivre les paquets et utilise un protocole de routing séparé pour mettre à jour sa table. Le protocole de routage en plus entraîne un traffic en plus mais le réseau mesh étant beaucoup plus petit qu’Internet et donc plus statique, un protocole dédié peut être plus efficace que d’utiliser le protocole de routage IP. Le dernier problème du mesh est que le routage intranet prend le pas sur l’IP et peut rendre les problèmes de routage plus difficiles à debugger.
+
 image::internetworking_tcp_ip/layers_boundaries.png[Frontières des couches]
+
 Les adresses physiques sont les adresses MAC.
 
 Les couches permettent de diviser un gros problème en plusieurs sous-problèmes. Mais utiliser des couches strictes nuit à la performance, car si l’on a aucune connaissance de la couche du dessous, on ne peut optimiser les envois.
 Quand on construit un protocole, les constructeurs s’autorisent d’obtenir certaines informations comme la taille maxi des paquets ou la route qui est utilisée. Ainsi la couche transport en ayant l’information sur la taille peut laisser la taille nécessaire pour les en-têtes ajoutées par les couches basses et optimiser son envoi. Les couches basses retiennent souvent les en-têtes en passant les paquets aux couches supérieures.
 
 Chaque frame Ethernet a un champs type indiquant ce que la frame transporte (paquet IP, ARP ou RARP).
+
 image::internetworking_tcp_ip/demultiplexing.png[Demultiplexing]
+
 On a du multiplexing et du demultiplexing à tous les étages. Demultiplexer permet d’orienter le paquet vers le bon module après vérification de l’intégrité du paquet.
 Les paquets IP ont aussi un champ type dans l’en-tête permettant de choisir vers quel protocole de transport envoyer le paquet (TCP, UDP, ICMP).
 L’accord sur les types et la gestion des types ignorés sont traités dans les protocoles.
 
-Adressage d’Internet
+=== Adressage d’Internet
 Un hôte (host) : un endpoint connecté à internet comme imprimante réseau, PC, tout appareil qui n’est pas un routeur.
 Les adresses binaires ont été choisies pour identifier un hôte pour avoir une sélection de next hop efficace.
 Chaque hôte se voit attribuer une *IP address* (Internet Protocol Address).
 Les addresses sont choisies avec soin pour permettre un forwarding efficace.
 Tous les hôtes sur un même sous-réseau partagent le même préfixe. En fait une adresse est constituée d’un netid (identifiant de son réseau) et d’un hostid. Un netid sur beaucoup de bits permet d’avoir beaucoup de réseau mais peu d’hôtes dans ces réseaux. Et inversement, un netid réduit diminue le nombre de réseaux mais augmente le nombre d’hôtes sur ceux-ci.
 Sur 32 bits pour IPv4 et 128 pour IPv6.
-=== Schéma IPv4
+
+==== Schéma IPv4
 Dans IPv4, 5 classes d’adresses
+
 image::internetworking_tcp_ip/ip_v4_addresses_classes.png[Classes d'adresses IPv4]
+
 La frontière entre préfixe et suffixe peut être calculée à partir de l’adresse elle-même qui est alors qualifiée de self-identifying. La classe est déterminée par les 3 bits forts, les 2 premiers étant même suffisants pour distinguer parmi les 3 premières classes.
 La classe A utilise  7 bit pour l’ID du network et 24 pour l’ID de l’host, pour la classe B, 14/16, pour la classe C, 21/8.
 On appelle dotted decimal notation, la notation séparant l’adresse en 4 décimaux séparés par des points représentant chacun 8 bits de l’adresse.
 Pour répondre au manque d’adresses tout en utilisant le même schéma d’adressage, on utilise le *subnetting* ou adressage de sous-réseau.
+
 image::internetworking_tcp_ip/subnetting.png[Adressage de sous-réseau]
+
 Dans l’exemple ci-dessous le 3e octet est utilisé par un routeur pour déterminer dans quel sous-réseau envoyer le paquet.
 Pour le subnetting on exploite l’adresse de la façon suivante
+
 image::internetworking_tcp_ip/address_portions.png[Portions de l'adresse]
+
 2 techniques de *subnetting* : *fixe* et *variable*.
 Dans la première, on fixe une part des 16 bits pour identifier le sous-réseau. Plus on utilise de bits, plus on a de réseaux et moins on a d’hôtes sur chaque réseau. Cette technique est plus facile à comprendre et administrer.
 On utilise la seconde quand on s’attend à des différences sur la taille des sous-réseaux. Le standard dit qu’on peut sélectionner une partition sous-réseau par réseau. On choisit une partition pour un sous-réseau donné puis les hôtes et routeurs qui y sont rattachés suivent cette décision sous peine de perte de paquets. Ce qu’il faut éviter est l’ambiguïté dans les adresses qui fait qu’une même adresse soit interprétée de 2 façons par 2 réseaux physiques différents.
@@ -187,7 +214,7 @@ Le supernetting qui en découle permet d’utiliser un ensemble d’adresses de 
 
 Pour un intranet, on évite d’utiliser des adresses dites routables pour éviter qu’elle ne soit envoyée par erreur sur le net. On utilise des *adresses privées*: 10.0.0.0/8 -> 10.255.255.255, 172.16.0.0/12 -> 172.31.255.255, 192.168.0.0/16 -> 192.168.255.255, 169.254.0.0/16 ->169.254.255.255
 
-=== Schéma IPv6
+==== Schéma IPv6
 Sur 128 bits. Elles sont assez larges pour que chaque personne ait la sienne.
 La notation décimale précédente serait trop longue, on utilise donc une notation hexadécimale séparée par 2 points.
 **68E6:8C64:FFFF:FFFF:0:1180:96A:FFFF
@@ -198,12 +225,16 @@ Les adresses étant suffisamment larges, elles permettent une hiérarchie plus r
 L’espace des adresses ressemble à celui à classes d’IPv4. Les 8 premiers bits suffisent à identifier les types basiques.
 
 Pour la transition, on embarque des adresses IPv4 dans des v6. Toute adresse commençant par 80 bits à zéro suivis de 16 bits à un contient sur les 32 derniers bits la v4 et est une *adresse de transition*. Un ensemble d’adresses est réservé au *protocole SIIT*.
+
 image::internetworking_tcp_ip/v4_to_v6_transition.png[Transition de la v4 à la v6]
+
 En plus d’embarquer la v4 dans la v6, les paquets doivent aussi être traduits au format v6.
 L’adresse pourrait faire échouer les vérifications checksum au niveau TCP et UDP, celles-ci intégrant l’adresse. Pour résoudre ce problème le complément du checksum pour la v4 est la même que pour sa version embarquée v6.
 
 Les v6 sont divisées en 3 parties : un préfixe utilisé pour identifié le site, un ID de sous-réseau pour distinguer les différents réseaux physiques sur le site et un ID d’interface pour identifier l’ordinateur dans le réseau
+
 image::internetworking_tcp_ip/v6_address_parts.png[Parties d'une adresse v6]
+
 On parle d’ID d’interface au lieu d’ID d’hôte pour identifier le fait qu’un même noeud/ordi peut avoir plusieurs interfaces de connexion et donc plusieurs IDs. Le MAC peut être utilisée comme ID unique, v6 étant assez large pour le contenir, ce qui permet de le retrouver de façon triviale, la totalité du réseau devant au préalable s’accorder sur la même représentation.
 *Une adresse, étant donné qu’elle identifie à la fois un réseau et un hôte, identifie une connexion à un réseau (valable pour v4 et v6)*.
 v6 établit bien cette différence en identifiant une adresse d’interface.
@@ -216,14 +247,18 @@ Le *broadcast de sous-réseau* utilise l’adresse network:subnet:{1}.
 L’*adresse constituée uniquement de 0* est réservée au cas où l’hôte doit communiquer mais ne connaît pas son adresse. Par ex pour connaître son IP il envoie un datagramme au broadcast limité en se donnant pour identité cette adresse. Le receveur lui envoie alors une réponse avec une méthode spéciale.
 Les requêtes à plusieurs points spécifiques sont appelées *multicast*. Elles sont envoyées à des *IP commençant par trois 1*.
 *127.0.0.0/8* est le préfixe de l’*adresse de loopback*. Par convention on utilise 127.0.0.1 mais un autre hôte peut être utilisé car TCP/IP n’examine pas l’hôte. Les paquets envoyés sur cette adresse sont directement adressés au module les gérant.
+
 image::internetworking_tcp_ip/special_v6_addresses.png[Adresses v6 spéciales]
+
 Sur v6 point de broadcast mais du multicast, les applications ayant plus besoin de communiquer avec un groupe d’applications qu’avec l’ensemble du réseau. v6 définit un groupe multicast *all hosts* et un *all nodes* (tous les hôtes et routeurs).
 v6 introduit une adresse dite *anycast* pour gérer la réplication serveur. Des serveurs identiques sont déployés à différents endroits du net et partagent une adresse anycast. Une requête vers cette adresse est envoyée au serveur le plus proche.
 Elle a également un ensemble de préfixes d’adresse dit *link-local* qui ne sont pas valides globalement et ne sont utilisables que sur le réseau porteur, gérés par les routeurs. Elles donnent un moyen de parler à ses voisins sans que les paquets n’arrivent sur internet.
 
 Un défaut de ces adresses est que changer un ordinateur de réseau change son adresse de contact. La faiblesse de v4 vient du fait que fixer le préfixe limite le nombre d’hôtes pouvant être gérés dans le réseau. Pour gérer la croissance on peut être obligé de changer le schéma si on dépasse la limite initiale.
 Pour faire suivre les paquets, on se sert de la portion réseau de l’adresse. Pour un hôte avec de multiples adresses, le chemin pris par le paquet va dépendre de l’adresse utilisée pour communiquer. En fonction de celle-ci, le chemin va être plus ou moins long. Connaître une seule adresse de destination peut donc ne pas être suffisant dans ce cas.
+
 image::internetworking_tcp_ip/multiple_packet_paths.png[Chemins possibles mutliples pour un paquet]
+
 Dans le schéma suivant A et B sont reliés aux réseaux 1 et 2. Accéder à A est plus rapide par le réseau 1 et B par le réseau 2.
 
 Chaque préfixe réseau est unique et assigné par un organisme central. A l'origine par l’IANA, maintenant par l’ICANN qui s’occupe de tous les noms et autres constantes utilisées dans les protocoles et notamment les adresses.
