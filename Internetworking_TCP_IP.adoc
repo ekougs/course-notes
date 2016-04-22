@@ -315,3 +315,24 @@ S'il a l'information a une requête ARP, il prend l'initiative de répondre
 Une adresse ethernet ne change que si un ordinateur est éteint, ce que le switch est en mesure de constater
 Le switch peut donc diminuer les requêtes de broadcast en répondant aux ARP à la place du destinataire s'il a l'information
 
+=== Proxy ARP
+
+image::internetworking_tcp_ip/proxy_arp.png[Proxy ARP]
+P connaît les correspondances pour les réseaux 1 et 2.
+Tous les autres utilisent ARP standard et n'ont pas connaissance de P.
+Quand R reçoit un paquet, il envoie une requête ARP
+Si ça va sur le réseau N1, P reçoit le paquet comme tous les autres mais l'ignore car h1 répondra plus vite que lui
+Si le paquet va sur N2, le broadcasting est normalement interdit, étant donné qu'on est sur un autre réseau
+R n'étant pas au courant de l'existence des 2 réseaux peut répondre
+Proxy ARP sert aussi à impersonifier et forward quand un ordi de N2 veut joindre un autre de N1
+Proxy ARP peut être utilisé sur la même machine qu'un firewall ou une connexion VPN où tous les paquets transiteront et se verront appliquer les règles avant d'arriver à destination
+
+
+=== IPv6 neighbor discovery
+NDP (Network Discovery Protocol) remplace ARP sur v6, un voisin étant un autre noeud appartenant au même réseau
+Il permet le mapping entre adresses v6 et physique mais a d'autres fonctions
+Il peut toruver l'ensemble des routeurs dans un réseau, déterminer si un voisin est atteignable, déterminer les caractéristiques du matériel réseau (taille max des paquets), configurer une adresse unique sur une interface et vérifier qu'elle n'est pas utilisée par ailleurs, trouver le meilleur routeur pour atteindre une destination
+La différence entre les 2 se trouvent dans la façon de gérer l'état des voisins (ICMPv6)
+ARP atteint l'envoi d'un message pour déterminer l'adresse
+Un noeud IPv6 découvre ses voisins au démarrage et ensuite vérifie continuellement leur état pour éviter les retards dans les envois de paquets et les broadcasts
+
