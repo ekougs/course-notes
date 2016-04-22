@@ -128,7 +128,7 @@ La *couche de présentation* concerne les applications utilisant le réseau (SMT
 
 TCP/IP définit un modèle sur 5 couches mais qui ne découle d’un corps de standardisation formel mais de chercheurs qui ont conçu Internet.
 
-image::internetworking_tcp_ip/layer_5_version.png[Couches dernière version]
+image::internetworking_tcp_ip/layers_5_version.png[Couches dernière version]
 Les utilisateurs utilisent des applications accédant à des services par l’internet TCP/IP.
 La *couche d’application* interagit avec celle de transport en envoyant/recevant des données. Chaque application choisit le style de transports (séquences de messages ou flux continu d’octets).
 La *couche de transport* fournit la communication d’une application à une autre. Cette communication est appelée E2E cat elle connecte 2 points finaux et non des routeurs intermédiaires. Elle peut réguler le flux d’informations. Elle peut aussi assurer la fiabilité du transport en s’assurant de l’arrivée des données. Le protocole fait retourner au destinataire une confirmation de réception. Le stream de données est transmis divisé en petites parties qui sont passées avec l’adresse de destination à la prochaine couche. Cette couche doit pouvoir accepter des données de plusieurs applications à transmettre. Elle ajoute des infos additionnelles à chaque paquet identifiant l’application source et la destinataire. Les protocoles de transport utilise un checksum pour se protéger d’erreurs causant le changement des bits. Le destinataire utilise ce checksum pour vérifier que le paquet transmis est bon.
