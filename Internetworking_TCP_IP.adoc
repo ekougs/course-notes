@@ -267,3 +267,51 @@ Dans le schéma suivant A et B sont reliés aux réseaux 1 et 2. Accéder à A e
 
 Chaque préfixe réseau est unique et assigné par un organisme central. A l'origine par l’IANA, maintenant par l’ICANN qui s’occupe de tous les noms et autres constantes utilisées dans les protocoles et notamment les adresses.
 ICANN distribue des blocs aux registres régionaux (ISPs majeurs).
+
+== Lier adresses physique et internet
+Avant toute transmission, la source doit lier l'adresse IP à l'adresse physique du destinataire pour que la communication soit possible
+Les protocoles utilisent 2 façons de traiter l'ARP: par des tables sur chaque machine contenant les paires Internet/Physique, en embarquant l'adresse physique dans l'adresse internet
+
+=== La liaison directe (direct mapping)
+On utilise l'adresse physique dans la partie hôte de l'adresse internet
+En IPv4 cette adresse peut être configuré comme un entier très petit et assigné à l'interface réseau, l'essentiel étant que l'entier soit unique.
+Il est souvent attribué de façon séquentielle à la connexion (1 pour le premier connecté, 2 pour le second...)
+Tant que l'administrateur a le contrôle sur les 2, il peut affecter l'adresse physique de telle sorte qu'elle soit suffisamment petite pour rentrer dans l'hôte
+Par exemple sur le réseau suivant 192.5.48.0/24, l'administrateur peut affecter 254 adresses physiques (1 à 254) sur l'octet de faible ordre.
+Très efficace car ne requiert que quelques instructions machines
+Par contre cette technique est limitée car on ne peut affecter qu'autant d'adresses physiques que nous laisse le masque de sous-réseau
+
+=== La résolution par liaison dynamique : ARP
+*ARP*: Address Resolution Protocol
+Offre un mécanisme raisonnablement efficace et qui ne requiert pas de configuration manuelle par l'administrateur
+Pour résoudre une adresse Ib, l'hôte broadcast une requête ARP pour obtenir l'adresse physique Hb.
+Tous les hôtes reçoivent l'adresse mais seul B reconnaît son adresse et répond.
+Cette requête n'est faite qu'au moment de l'envoi d'un paquet IP, qui sera directement envoyé à B.
+Le logiciel d'ARP possède un cache qui évite de surcharger le réseau avec du broadcast et les machines avec le traitement de la requête
+Il utilise un timeout pour invalider son cache.
+Ce qui lui permet d'être indépendant d'un 3rd party et de pouvoir revalider ses entrées.
+Par contre il ne détecte les changements (comme un crash de machine) qu'après le timeout.
+
+Lorsque B reçoit une requête de A, il sauve l'adresse physique de A contenue dans la requête
+Toutes les machines recevant la requête en broadcast mette également à jour leur entrée concernant B s'ils ne l'ont pas
+Quand l'adresse physique a changé (carte remplacée), l'hôte en question peut faire un broadcast gracieux pour avertir du changement
+
+ARP et autres mécanismes de liaison cachent juste le fait que les équipements ne savent pas interpréter une adresse internet, sinon ils n'existeraient.
+De ce fait ARP ne fait pas partie de TCP/IP mais est plutôt associé au hardware comme protocole bas niveau sur lequel TCP/IP fonctionne
+
+Pour éviter un jitter, la revalidation d'adresse par un broadcast après un timeout, qui est embêtant pour du temps réel comme un appel téléphonique (les paquets vont de plus en plus être retardés), ARP associe 2 durées à une entrée
+Le timeout traditionnel et un temps pour revalidation. Si des paquets ont utilisé récemment l'entrée, il envoie une requête ARP et continue d'utiliser son entrée
+Un fois la réponse reçue, il réinitialise les 2 durées
+Cela va permettre de revalider l'entrée sans interrompre le flux de données
+
+=== RARP : Reverse ARP
+Une requête ARP peut contenir un message RARP
+Au démarrage un système envoie une RARP pour obtenir une adresse IP, contenant son adresse physique
+Le serveur réseau regarde sa table, en extrait l'IPv4 correspondant à l'adresse envoyée et renvoie une réponse RARP
+Utilisé dans les data centers de cloud, quand une machine virtuelle est migrée d'un PC à un autre parce qu'elle met à jour les tables des switches efficacement
+Le paquet RARP est ensuite simplement jeté par le switch
+Les switches réduisent les broadcast en observant les requêtes ARP et en mettant à jour sa propre table de correspondance
+S'il a l'information a une requête ARP, il prend l'initiative de répondre
+Une adresse ethernet ne change que si un ordinateur est éteint, ce que le switch est en mesure de constater
+Le switch peut donc diminuer les requêtes de broadcast en répondant aux ARP à la place du destinataire s'il a l'information
+
