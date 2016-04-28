@@ -1,0 +1,391 @@
+= RFC 2616 : HTTP 1.1
+:hardbreaks:
+
+== Un protocole requête/réponse
+La requête : une méthode, une URI et une version du protocole suivi par un message MIME contenant les modifiers de la requête, des infos sur le client et un corps optionnel par une connexion avec le serveur.
+La réponse : une ligne de statut contenant une version du protocole et un code d’erreur ou de succès suivi d’un message MIME contenant des informations sur le serveur, des méta données sur l’entité et un corps optionnel.
+
+Les intermédiaires dans la communication (proxy, tunnel…) peuvent enrichir les messages et même répondre au message avant qu’il n’arrive au serveur (pour le cache par exemple).
+
+La version d’HTTP s'écrit en major.minor et décrit le format du message et la capacité à comprendre la communication HTTP.
+Un proxy/gateway ne DOIT PAS envoyer un message qui a une version plus grande que la sienne.
+Les proxies de cache DOIVENT, les gateway PEUVENT et les tunnels ne DOIVENT PAS upgrade la requête à la plus haute version qu’ils supportent.
+La réponse du proxy/gateway à cette requête DOIT être dans la même version majeure.
+
+== Les formats
+Pour HTTP, une URI est une chaîne formattée identifiant de façon unique une ressource.
+Elle peut être relative ou absolue. La forme absolue commence toujours par un nom de schéma (http) suivi par un semi colon.
+HTTP ne place pas à priori de limite de longueur sur l’URI.
+Le serveur DEVRAIT retourner 414 s’il ne peut supporter une URI de cette longueur.
+Cependant les serveurs devrait être conscient que certains vieux clients et proxies ne savent pas gérer des URI de plus de 255 octets.
+Une URL http : "http:" "//" host [ ":" port ] [ abs_path [ "?" query ]]
+Le port par défaut 80.
+L’URI de requête est abs_path. Si elle n’est pas présente dans la requête elle DOIT être comprise comme "/" quand utilisée comme requête.
+
+Les 3 formats de date permis historiquement par le protocole, le 1er étant préféré :
+Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822 mis à jour par RFC 1123
+Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850 rendu obsolète par RFC 1036
+Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
+Les serveurs et clients DOIVENT accepter les 3 formats mais NE GENERER QUE le 1er.
+Toutes les dates DOIVENT être représentés en GMT qui pour HTTP est égal à UTC.
+Les dates HTTP sont sensibles à la casse.
+
+Character set : une méthode avec une ou plusieurs tables pour convertir des séquence d’octets en caractères.
+Le charset n’est pas sensible à la casse.
+Tous les charset définis dans le registre de character set de l'IANA DOIVENT représenter le charset défini dans ce registre.
+Une requête sans charset précisé annonce au destinataire qu'il doit le deviner.
+
+content-coding indique un encoding de transformation qui a été ou peut être appliqué à l’entité. Il n’est pas sensible à la casse et permet à l’entité sous-jacente d'être compressée ou transformée sans perdre d'informations.
+Ceux enregistrés dans IANA : gzip ou x-gzip, compress ou x-compress (lzw), deflate (zlib, RFC 1951 et 1950), identity (pas de transformation).
+
+transfer-conding indique un encoding de transformation qui a été, peut être ou peut avoir besoin d’être appliqué pour assurer un transport sûr de l’entité corps. C’est une propriété du message pas de l’entité originale contrairement à content-conding.
+transfer-coding = "chunked" | transfer-extension
+transfer-extension = token *( ";" parameter)
+parameter = attribute "=" value
+attribute = token
+value = token | quoted-string
+Il est insensible à la casse. Quand un transfer-coding est appliqué au message, il DOIT inclure "chunked" sauf si le message se termine en fermant la connection. chunked DOIT être le dernier transfer-coding appliqué au message et ne DOIT PAS être appliqué plus d’une fois au corps du message. Cela permet au destinataire de déterminer la longueur du message.
+
+Le chunked encoding modifie le corps du message pour pouvoir le transférer comme un série de gros morceau en en précisant la taille suivi par un trailer OPTIONNEL contenant les headers.
+Chunked-Body     = *chunk
+                                 last-chunk
+                                 trailer
+                                 CRLF
+chunk                    = chunk-size [ chunk-extension ] CRLF
+                                 chunk-data CRLF
+chunk-size             = 1*HEX
+last-chunk              = 1*("0") [ chunk-extension ] CRLF
+chunk-extension    = *( ";" chunk-ext-name [ "=" chunk-ext-val ] )
+chunk-ext-name    = token
+chunk-ext-val         = token | quoted-string
+chunk-data             = chunk-size(OCTET)
+trailer                      = *(entity-header CRLF)
+Un serveur utilisant le chunked transfer-conding ne DOIT PAS utiliser le trailer pour les en-têtes sauf si la requête : contient un header TE indiquant que les trailers sont acceptables dans le transfer-coding de la réponse ou le serveur est celui d’origine de la réponse, les trailer headers sont des méta optionnels et que le destinataire peut utiliser ce message sans eux. Le serveur doit accepter la possibilité qu’ils peuvent être enlevés sur le chemin de retour vers le client.
+
+HTTP utilise les types de média dans le content-type et accept.
+media-type     = type "/" subtype *( ";" parameter )
+type                = token
+subtype          = token
+Les paramètres ont la forme attribute/value décrite plus haut.
+Le media-type est insensible à la casse.
+
+Le token produit permet à l’application de s’identifier :
+product               = token [ "/" product-version ]
+product-version  = token
+Ex.:
+User-Agent: CERN-LineMode/2.15 libwww/2.17b3
+Server: Apache/0.8.4
+Ils DEVRAIENT être concis et ne pas être utilisés pour de la pub.
+
+Les tags de langage identifient une langue parlée, écrite ou utilisée pour la communication entre humains.
+language-tag  = primary-tag *( "-" subtag )
+primary-tag     = 1*8ALPHA
+subtag             = 1*8ALPHA
+Ex.: en, en-US, en-cokney, i-cherokee, x-pig-latin
+Un primary-tag de 2 lettres est une langue ISO-639 et un subtag de 2 lettres un pays ISO-3166.
+
+Les tags d’entité sont utilisés pour comparer plusieurs entités provenant de la même ressource. Il est utilisé dans Etag, If-Match, If-None-Match et If-Range.
+entity-tag = [ weak ] opaque-tag
+weak        = "W/"
+opaque-tag = quoted-string
+Un tag fort PEUT être partagée par 2 entités d’une ressource s’ils sont équivalents par l’égalité de leurs octets.
+Un tag faible (préfixe W) PEUT être partagée par 2 entités seulement si les entités sont équivalentes et peuvent être échangées sans changement de sémantique.
+Un tag d’entité DOIT être unique pour toutes les versions des entités associées à une ressource particulière. La valeur d'un tag PEUT être utilisée pour des entités obtenues par des requêtes sur différentes URI mais n’implique pas leur équivalence.
+
+Les range sont utilisés dans Range et Content-Range :
+range-unit       = bytes-unit | other-range-unit
+bytes-unit       = "bytes"
+other-range-unit = token
+La seule unité de range dans HTTP 1.1 est bytes. Les autres valeurs PEUVENT être ignorées.
+
+On distingue 4 types de headers : généraux, pour les requêtes, pour les réponses, pour les entités.
+La constitution d’un header :
+message-header = field-name ":" [ field-value ]
+field-name     = token
+field-value    = *( field-content | LWS )
+field-content  = <the OCTETs making up the field-value and consisting of either *TEXT or combinations of token, separators, and quoted-string>
+
+Le corps du message :
+message-body = entity-body | <entity-body encoded as per Transfer-Encoding>
+Le transfer-encoding étant une propriété du message, il PEUT être ajouté ou supprimé par une application dans la chaîne de requête/réponse.
+La présence d’un corps dans une requête est signalée par l’inclusion d’un Content-Length ou d’un Tranfer-Encoding. Un corps ne doit pas être inclus si la spécification de la méthode de requête ne le permet pas. Un serveur DEVRAIT lire et faire suivre le corps. Si la requête ne contient pas les informations pour l’entité, le message DEVRAIT être ignoré dans le traitement de la requête.
+La présence d’un corps dans la réponse dépend à la fois de la méthode de requête et du statut. Les réponses à HEAD ne DOIVENT PAS inclure de corps même si les headers pourraient le faire croire. Les 1xx, 204 et 304 ne DOIVENT PAS inclure un corps. Tous les autres en contiennent sa taille POUVANT être égale à 0.
+
+Le tranfer-length est la taille du corps tel qu’il apparaît dans le message, donc après que les transfer-condings aient été appliqués.
+Pour le déterminer :
+- Pour les messages qui ne DOIVENT PAS inclure de corps, ils sont terminés par la première ligne vide après les headers et ce même s’il y a des headers d’entité dans le message
+- si on a un Transfer-Encoding avec une valeur autre que identity alors le transfert-length est défini par l’usage de chunked sauf si le message est terminé en clôturant la connexion.
+- si on a un Content-Length sa valeur en octets représente à la fois l’entity-length et le transfer-length. Le content-length ne doit pas être envoyé si les 2 sont différents. Si un message est envoyé avec un Transfer-Encoding et un Content-Length, le dernier est ignoré.
+- si le message utilise comme media type multipare/byteranges et le transfer-length n’est pas spécifié alors ce type de media auto-delimité défini le tarifé-length. Ce type de media ne DOIT PAS être utilisé sauf si l’expéditeur sait que le destinataire sait le parser.
+- Par le serveur qui clôture la connexion. (la requête ne peut pas l’utiliser car sinon il n’existe aucun moyen pour le serveur de lui répondre)
+Pour la compatibilité avec 1.0, il FAUT transmettre le content-length sauf si on sait que le server est en compatible 1.1. Un requête contenant un corps sans content-length DOIT se voir répondre un 400 par le serveur s’il ne peut déterminer sa longueur ou un 411 s’il veut recevoir un Content-Length valide.
+Toutes les applications 1.1 qui reçoive des entités DOIVENT accepter le transfer-coding chunked pour permettre l’utilisation de ce mécanisme quand la longueur du message ne peut être déterminé.
+Les messages ne doivent pas inclure à la fois Content-Length et un transfer-coding différent d’identity.
+Quand Content-Length est fourni, il doit correspondre au nombre d’octets du corps.
+
+general-header = Cache-Control | Connection | Date | Pragma | Trailer | Transfer-Encoding | Upgrade | Via | Warning
+
+Request       = Request-Line
+                        *(( general-header | request-header | entity-header ) CRLF)
+                        CRLF
+                        [ message-body ]
+
+Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
+Ex.:
+GET /pub/WWW/TheProject.html HTTP/1.1
+GET http://www.w3.org/pub/WWW/TheProject.html HTTP/1.1
+GET * HTTP/1.1
+
+Method         = "OPTIONS" | "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "TRACE" | "CONNECT" | extension-method
+extension-method = token
+Une ressource peut préciser la liste des méthodes qu’elle autorise dans Allow. La liste des méthodes autorisées peut changer dynamiquement.
+Le serveur retourne le statut 405 si la méthode est connue par le serveur mais pas autorisée et 501 s’il n’est pas reconnue ou implémentée. GET et HEAD DOIVENT être supportés par les serveurs à usage normal.
+
+Request-URI = "*" | absoluteURI | abs_path | authority
+* veut dire que la requête ne s’applique à aucune ressource particulière. L’absoluteURI est REQUIS quand on s’adresse à un proxy.
+
+La ressource identifiée par une requête est déterminée à partir de l’URI de requête et du Host.
+Un serveur qui ne permet pas aux ressources de différer en fonction du Host PEUT ignorer le Host.
+Un serveur se servant du Host pour déterminer quelle ressource servir doit respecter les règles suivantes :
+- si l’URI de requête est absolue l’hôte en fait partie. Host DOIT alors être ignorée.
+- si elle n’est pas absolue (* ou relative) et que la requête contient un Host alors ce dernier donne le host.
+- Si l’hôte en se basant sur les 2 premières règles n’est pas valide, le serveur répond un 400.
+
+request-header = Accept | Accept-Charset | Accept-Encoding | Accept-Language | Authorization | Expect | From | Host | If-Match | If-Modified-Since | If-None-Match | If-Range | If-Unmodified-Since | Max-Forwards | Proxy-Authorization | Range | Referer | TE | User-Agent
+
+Response      = Status-Line
+                         *(( general-header | response-header | entity-header ) CRLF)
+                         CRLF
+                         [ message-body ]
+
+Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
+
+Les statuts sont sur 3 chiffres et se répartissent en plusieurs classes déterminées par le premier chiffre : 1xx (Information), 2xx (succès), 3xx (Redirection), 4xx (erreur client), 5xx (erreur serveur)
+Ils sont extensibles. Les applications ne sont pas obligés de comprendre la signification de tous les codes enregistrés. Cependant elles DOIVENT comprendre la classe du statut et traiter les statuts non compris comme le x00 correspondant mais ne DOIVENT pas le mettre en cache. Le client DEVRAIT présenter l’entité reçue à l’utilisateur car elle peut contenir des informations pouvant expliquer le statut inconnu.
+
+response-header = Accept-Ranges | Age | ETag | Location | Proxy-Authenticate | Retry-After | Server | Vary | WWW-Authenticate
+
+entity-header  = Allow | Content-Encoding | Content-Language | Content-Length | Content-Location | Content-MD5 | Content-Range | Content-Type | Expires | Last-Modified | extension-header
+extension-header = message-header
+
+entity-body    = *OCTET
+entity-body := Content-Encoding( Content-Type( data ) )
+Un message en 1.1 contenant un corps DEVRAIT inclure un Content-Type qui définit son contenu. Le destinataire PEUT essayer de deviner le type si Content-Type n’est pas fourni. Si le média reste inconnu, le destinataire DEVRAIT le considérer comme un application/octet-stream.
+
+entity-length est la taille de l’entité dans le corps avant application du transfer-coding.
+
+Les avantages des connexions HTTP persistantes :
+- On sauve du CPU en ouvrant/fermant  moins de connections TCP sur les routeurs et les hôtes et la mémoire utilisée pour le contrôle de blocs du TCP peut être sauvegardée sur les hôtes
+- Les requêtes et réponses peuvent être pipelined sur une connexion. Ca permet aux clients de faire de multiples requêtes sans attendre chaque réponse, permettant à une connexion d’être utilisée de façon plus efficace sur moins de temps écoulé
+- La congestion est réduite en réduisant le nombre de paquets causés par les ouvertures TCP
+- La latence est réduite car plus de handshake à l'ouverture
+1.1 utilise les connexions persistantes par défaut. Elles offrent un mécanisme par lequel le client et le serveur peut signaler la fermeture d’une connexion TCP. Quand la clôture est signalée, le client ne DOIT PLUS envoyé de requêtes sur cette connexion.
+Le serveur PEUT supposer que le client a l’intention de maintenir la connexion sauf s’il reçoit un Connection: closed. S’il ferme la connexion, il doit envoyer la même chose au client.
+Du côté du client c’est la même chose.
+Un client utilisant la connexion persistante peut envoyer plusieurs requêtes à la suite (pipeline) sans en attendre la réponse. Le serveur DOIT répondre aux requêtes dans le même ordre.
+Les clients qui pipelinent directement après la connexion DEVRAIENT être préparés à réessayer la connexion si le premier essai échoue. Dans ce cas il ne DOIT PAS réessayer un pipeline avant de s’assurer que la connexion est persistente. Le client DOIT aussi être préparé à renvoyer leurs requêtes si le serveur ferme la connexion avant l’envoi de toutes les réponses correspondantes.
+Le client ne DEVRAIT PAS pipeline des requêtes non-idempotent ou une séquence de méthodes non-idempotent. Avant de lancer une requête non-idempotent le client DEVRAIT attendre la réponse à la requête précédente.
+Les proxy DOIVENT signaler aux clients et aux serveurs d’origine les connexions persistantes séparément. Un proxy ne DOIT PAS  établir de connexion persistante avec du 1.0.
+Quand un client ou un serveur veut timeout sa connexion, il DEVRAIT gracieusement avertir la partie opposée et pouvoir réagir à une clôture.
+Un client, serveur ou proxy PEUT fermer sa connexion à n’importe quel moment. Ils DOIVENT donc pouvoir réagir à un évènement asynchrone de fermeture.
+Le serveur DEVRAIT toujours répondre à au moins une requête par connexion si possible.
+Les clients utilisant des connexions persistantes DEVRAIENT limiter le nombre de connexions (2 conseillées) simultanées qu’ils maintiennent avec un serveur donné. Un proxy DEVRAIT utiliser 2*N connexions vers un serveur ou un autre proxy où N est le nombre de clients actifs.
+Les serveurs DEVRAIENT maintenir des connexions persistantes et utiliser le mécanisme de contrôle de flux de TCP plutôt que de s’attendre à ce que le client retente les requêtes sur les connexions terminées.
+Un client 1.1 envoyant un corps DEVRAIT surveiller la connexion réseau à la recherche d’un statut d’erreur quand il transmet la requête. En cas d’erreur il DEVRAIT immédiatement cesser l’envoi. Si c’était un chunked on envoie un chunk de longueur 0 et un trailer vide. S’il avait un Content-Length le client DOIT fermer la connexion.
+L’utilisation du statut 100
+Il permet au client qui envoie une requête avec un corps de déterminer si le serveur d’origine veut bien accepter la requête avant que le client n’envoie le corps. Dans certains cas ce serait assez inefficace ou inapproprié si le client envoie le corps alors que le serveur rejette la requête sans examiner son corps.
+Le client qui attend ce statut pour envoyer le corps DOIT envoyer dans sa requête un Expect: 100-continue
+Un client n’ayant pas l’intention d’envoyer un corps dans sa requête de DOIT PAS utiliser ce comportement.
+Les réponses à cette requête sont un 100 ou un 417 (Expectation Failed).
+A cause d’implémentations plus veilles, le client ne DOIT néanmoins PAS attendre indéfiniment un 100 avant d’envoyer le corps.
+Quand un serveur reçoit un Expect: 100-continue il DOIT répondre 100 et continuer de lire sur le stream d’entrée ou répondre avec un statut final. Il ne DOIT PAS attendre le corps de la requête avant d’envoyer le 100. S’il répond avec un statut final, il PEUT fermer la connexion ou continuer de lire et ignorer le reste de la requête. Il ne DOIT PAS exécuter la requête s’il retourne un code de statut final.
+Le serveur ne DOIT PAS envoyer de 100 s’il ne reçoit pas l’Expect approprié ou si la requête vient d’un 1.0. Il peut néanmoins l’envoyer à un PUT ou un POST sans Expect afin de parier à client attendant un 100 sans le déclarer et ne s’applique qu’à du 1.1.
+Le serveur PEUT omettre le 100 s’il a déjà reçu le corps complètement ou en partie.
+Si le serveur reçoit une requête avec un corps sans Expect, il ne DEVRAIT PAS  fermer la connexion avant la fin de la lecture de la requête en entier.
+Si un proxy reçoit un Expect:100 et qu’il sait que le prochain saut est un serveur 1.1 il DOIT faire suivre la requête avec Expect.
+Si le proxy sait que le prochain saut est un 1.0, il ne DOIT PAS la faire suivre et il DOIT répondre avec un 417.
+Les proxies DEVRAIENT maintenir un cache avec la version HTTP des serveurs sur le prochain saut.
+Un proxy ne DOIT PAS faire suivre un Expect reçu d’un 1.0. Il fait continuer la requête sans cette en-tête.
+Si le client constate que la connexion est fermée, alors qu’il n’est pas directement connecté au serveur et qu’il n’a pas envoyé d’Expect continue, avant même de recevoir un statut du serveur, il DEVRAIT retenter la requête. Dans ce cas, il DEVRAIT tenter la procédure suivante :
+initier une nouvelle connexion au serveur, transmettre les en-têtes, initialiser une variable qui détient la valeur de l’aller retour au serveur pour la connexion ou 5s si ce temps est indisponible, mettre dans T R * 2^N où N est le nombre d’essais précédents, attendre une réponse du serveur pour au plus T secondes, sans réponse après ce temps, transmettre le corps, et s’il constate que la connexion est fermée prématurément recommencer sauf si le nombre d’essais qu’il s’est fixé est terminé.
+Si le client reçoit un statut d’erreur, il ne DEVRAIT PAS continuer et DEVRAIT fermer la connexion s’il n’a pas terminé d’envoyer le message.
+Les méthodes
+HEAD et GET ne DEVRAIENT être vues que comme des actions de récupération. Elles sont considérées comme sûres. Ce qui n’empêche pas au serveur d’avoir des effets de bord sur ces méthodes dont le client ne peut être tenu responsable.
+Une méthode est considérée comme idempotente si les effets de bord pour N > 0 requêtes identiques sont les même que pour une seule. GET, HEAD, PUT et DELETE partagent ces propriétés. OPTIONS et TRACE ne DEVRAIENT PAS avoir d’effets de bord donc sont idempotentes de base.
+Une série de requêtes idempotentes n’est pas forcément idempotente.
+Une méthode n’ayant pas d’effet de bord est idempotente.
+OPTIONS
+Permet de voir les options de communication disponibles pour une chaîne de requête/réponse sur l’URI spécifiée. Elle permet au client de déterminer les options et conditions nécessaires liées à une ressource ou les capacités d’un serveur sans requérir d’action sur la ressource ou initier une récupération de la ressource.
+Les réponses à cette méthode ne sont pas cachables.
+Si sa réponse contient un corps, Content-Type DOIT être retourné.
+Si l’URI de requête est *, la requête concerne le serveur en général. Cette requête est perçu comme un ping et peut être utilisée par exemple pour tester la version HTTP d’un proxy.
+Sinon la requête s’applique aux options sur la ressource pointée par l’URI.
+Une réponse 200 DEVRAIT inclure les en-têtes pouvant les fonctionnalités optionnelles implémentée par le serveur pour cette ressource (comme Allow) et inclure les extensions non définies par la spéc. Le corps (optionnel) DEVRAIT contenir des infos sur les options de communication. Son format n’est pas spécifié et PEUT être sujet à négociation entre client et serveur. S’il n’y a pas de corps, on DOIT envoyer un Content-Legth: 0.
+On PEUT utiliser Max-Forwards pour cibler un proxy spécifique dans la chaîne de requête. Si un proxy reçoit un OPTIONS sur une URI absolue sur laquelle le roquets forwarding est permis, il DOIT vérifier son Max-Forward. S’il est égal à 0, il ne DOIT PAS faire suivre le message, mais DEVRAIT répondre sur ses options de communication. Si Max-Forward est > 0, il DOIT le décrémenter et faire suivre. Si la requête ne contient pas de Max-Forwards il ne DOIT PAS lui en rajouter.
+GET
+Permet de récupérer l’information identifiée par l’URI de la requête.
+On parle de GET conditionnel si la requête contient If-Modified-Since, If-Unmodified-Since, If-Match, If-None-Match ou If-Range. Un conditional GET permet d’éviter du traffic réseau inutile en se servant des caches.
+On parle de GET partiel si la requête contient un Range.
+HEAD
+Identique à GET mais le serveur ne DOIT PAS retourner de corps. Les métainfos du HEAD doivent être identiques à ceux d’un GET correspondant.
+Elle peut être cachée  pour mettre à jour une entité cachée précédemment. Si les nouvelles valeurs indique que l’entité cachée diffère de l'entité récupérée (changement sur Content-Length, Content-MD5, ETag ou Last-Modified), le cache DOIT considéré l’entrée comme caduque.
+POST
+Demande au serveur d’accepter l’entité jointe comme nouveau subordonné de la ressource ciblée. Elle peut être utilisée pour : annoter des ressources existantes, poster un message, fournir un bloc de données pour un process de gestion de données, étendre une BDD à travers une opération d’ajout.
+Sa fonction est déterminée par le serveur en fonction de la ressource visée.
+La réponse ne résulte pas forcément sur une ressource identifiable par une URI. Dans ces cas les réponses 200 ou 204 sont les réponses appropriées.
+Si une ressource a été créée, la réponse DEVRAIT être 201 et contenir l’entité plus Location avec l’URI de l’entité.
+PUT
+Demande que l'entité jointe soit stockée à l’URI fournie. Si l’URI contient déjà une entité, l’entité jointe DEVRAIT être considérée comme un version modifiée de l’existante. Sinon elle est crée et dans ce cas un 201 est renvoyée. Si une ressource existante est modifiée, on DEVRAIT retourner un 200 ou un 204. Sinon une erreur appropriée DEVRAIT être renvoyée.
+Le destinataire de l’entité ne DOIT PAS ignorer un Content-* qu’il ne comprend ou n'implémente pas et DOIT retourner une 501 dans ces cas.
+Si la requête passe par un cache et que l’entité pointée y est référencée, elle DEVRAIT être considérée comme caduque.
+POST et PUT diffèrent par le fait que l’URI du premier pointe vers une ressource censée gérer l'entité alors que celle du PUT pointe vers la ressource contenant l’entité.
+Si le serveur veut que la requête soit appliquée sur une URI différente, il DOIT renvoyer run 301 and le client peut alors décider s’il redirige ou non.
+DELETE
+Supprime la ressource identifiée par l’URI de la requête.
+Le serveur ne DEVRAIT PAS indiquer un succès de l’opération s’il n’a pas l’intention au moment de la réponse de supprimer la ressource ou de la déplacer dans un endroit inaccessible.
+Retourne 200 si une entité décrivant le statut est jointe, 202 (Accepted) si l’action n’a pas été menée, 204 si elle a été menée mais qu’il y a pas de corps.
+Si la requête passe par un cache, l’entité référée doit être caduque si le cache en contient une référence.
+Les réponses de cette méthode ne sont pas cachables.
+TRACE
+Utilisé pour invoquer une loop-back d’une couche d’application lointaine.
+Le destinataire est soit le serveur d’origine ou le premier proxy ou gateway recevant un Max-Forwards à 0.
+La requête ne DOIT PAS avoir de corps.
+Via contient une trace de la chaine de requête.
+Si la requête est valide, la réponse DEVRAIT contenir la requête entière dans son corps avec un Content-Type à message/http.
+Les réponses à cet appel ne DOIVENT PAS être cachées.
+CONNECT
+Il est réservé pout un usage avec un proxy qui peut dynamiquement se changer en tunnel (tunnel SSL par ex.).
+Les statuts
+100 Continue
+Voir plus haut
+101 Switching Protocols
+Le serveur comprend la requête du client via Upgrade. Le serveur renvoie un 101 avec une ligne vide et change immédiatement après de de protocole pour celui précisé dans l’Upgrade du 101.
+Le protocole ne DEVRAIT être changé que si c’est avantageux de le faire (prendre une version plus récente de HTTP ou à du synchrone).
+200 OK
+201 Created
+Le résultat de la requête est une nouvelle ressource créée. L’URI de cette ressource se trouve dans Location.
+Le serveur d’origine DOIT créer la ressource avant de retourner le statut 201.
+Si elle n’est pas créée immédiatement, il DEVRAIT renvoyer un 202.
+Un 201 peut contenir un Etag avec la valeur le tag de l’entité créée.
+202 Accepted
+La réponse a été acceptée pour traitement mais celui-ci n’est pas encore terminé. Il n’y a pas de procédure pour renvoyer un statut à une telle opération asynchrone.
+La réponse DEVRAIT contenir une indication du statut présent de la requête et soit un pointeur pour surveiller le statut (une ressource ?) soit une estimation de quand l’utilisateur peut s’attendre à ce que la requête soit traitée.
+203 Non-Authorative Information
+Les méta données retournées dans l’en-tête de l’entité ne sont pas entièrement produite sur le serveur mais rassemblé d’une copie locale ou d’un tiers. L’ensemble des infos PEUT être un sous-ensemble ou un contenant de la version originale. L’usage de ce statut n’est pas requis et n’est approprié que quand la réponse serait autrement un 200.
+204 No Content
+205 Reset Content
+Le serveur a traité la requête et le user agent DEVRAIT invalider la vue qui a causé l’envoi de la requête. Cette réponse permet par exemple de vider un formulaire pour permettre à l’utilisateur de faire une autre action. La réponse ne DOIT PAS inclure une entité.
+206 Partial Content
+Le serveur a traité le partial GET pour la ressource. La requête DOIT avoir inclus un Range indiquant la plage désirée et PEUT avoir inclus un If-Range.
+La réponse inclut soit un Content-Range indiquant la plage inclus dans la réponse soit un Content-Type multipart/byteranges contenant les Content-Range pour chaque partie. S’il y a un Content-Length sa valeur DOIT correspondre au nombre exact d’octets du corps. Elle inclut également Date et Etag et/ou Content-Location si l’en-tête était envoyée avec un 200. Enfin elle envoie Expires, Cache-Control et/ou Vary s’ils sont différents de ceux envoyés dans une précédente réponse pour le même variant.
+Si cette réponse est le résultat d’un If-Range qui utilisait un validateur de cache fort, la réponse ne DEVRAIT PAS contenir d’autres en-têtes entités. Si c’est le résultat d’un validateur faible, la réponse ne DOIT PAS en contenir d’autres pour prévenir des inconsistances entre les entités en cache et les en-têtes mises à jour. Sinon elle DOIT contenir tous les headers qu’aurait contenus un 200.
+Un cache ne DOIT PAS combiner une 206 avec d’autres contenus en cache si Etag ou Last-Modified ne correspondent pas exactement.
+Un cache ne supportant pas Range et Content-Range ne DOIT PAS  mettre en cache du 206.
+300 Multiple Choices
+A moins que ce soit un HEAD, la réponse DEVRAIT inclure une entité contenant une liste des caractéristiques et d’emplacement(s) de la ressource pour que l’utilisateur ou le user agent puisse choisir le plus approprié. Le format de l’entité est spécifié dans Content-Type.
+Si le serveur a un emplacement préféré DEVRAIT le mettre dans Location.
+301 Moved Permanently
+La ressource s’est vue assignée une nouvelle URI et toute référence future DEVRAIT utiliser une des URIs retournées. Cette réponse peut être mise sauf indication contraire.
+La nouvelle URI DEVRAIT être donnée dans Location. A moins que ce soit un HEAD, l’entité de réponse DEVRAIT contenir une note hypertexte avec un lien vers le(s) nouvelle(s) URI(s).
+Si le 301 est reçue pour une requête autre que GET et POST, le user agent ne DOIT PAS rediriger automatiquement à moins de pouvoir faire confirmer le client.
+302 Found
+La ressource demandée réside temporairement sous une URI différente. Etant donné que la redirection pourrait être altérée, le client DEVRAIT continuer à utiliser cette URI pour de futures requêtes. La réponse peut être mise en cache si indiqué par le Cache-Control ou Expires.
+L’URI temporaire DEVRAIT être fournie dans Location. A moins que ce soit un HEAD, le corps DEVRAIT contenir une courte note hypertexte avec un lien vers le(s) nouvelle(s) URI(s);
+Un 302 n’entraîne une redirection sans confirmation que pour des GET et HEAD.
+303 See Other
+La réponse à la requête peut être trouvée sous une différente URI et DEVRAIT être récupérée avec un GET sous cette ressource. Permet par exemple à l’output d’un POST de rediriger le user agent à une ressource sélectionnée. Elle ne doit pas être mise en cache mais la redirection peut l'être.
+La réponse ressemble à du 302 (location et note hypertexte dans le corps).
+304 Not Modified
+Si on fait un GET et que l’accès est permis mais que le document n’a pas été modifié, le serveur DEVRAIT répondre avec ce statut. Il n’a pas de corps.
+La réponse contient les en-têtes : Date, Etag et/ou Content-Location, Expires, Cache-Control et/ou Vary s’ils diffèrent de ce qui a été envoyé dans une réponse précédente pour le même variant.
+Pour les en-têtes d’entité, si le GET conditionnel utilisait un validateur de cache fort, la réponse ne DEVRAIT PAS en contenir d’autres, s’il utilisait un validateur faible, il ne DOIT PAS en contenir d’autres pour prévenir les inconsistances dans le cache.
+Si le 304 indique une entité qui n’est pas dans le cache, celui-ci DOIT l’ignorer et répéter la requête sans le conditionnel.
+Si le cache reçoit un 304 pour une ressource en cache, il DOIT mettre à jour l’entrée pour répéter les nouvelles valeurs des champs.
+305 Use Proxy
+La ressource DOIT être accédée par le proxy fournie dans Location. Les 305 DOIVENT être générés par les serveurs d’origine.
+306 Unused
+Plus utilisé
+307 Temporary Redirect
+La ressource réside temporairement sous une différente URI. Comme la redirection PEUT être altérée à l’occasion, le client DEVRAIT continuer à utiliser l’URI d’origine. On peut la mettre en cache si indiqué par Cache-Control ou Expires.
+L’URI est fournie dans Location et si on ne fait pas un HEAD, elle contient une note hypertexte comme pour le 302. Pas de redirection automatique pour les méthodes autres que HEAD et GET.
+400 Bad Request
+La requête n’a pas été comprise à cause d’une mauvaise syntaxe.
+401 Unauthorized
+La requête requiert une authentification de l’utilisateur. La réponse DOIT inclure WWW-Authenticate. Le client PEUT répéter la requête avec un bon Authorization. Si la requête le contenait déjà Authentication, les credentials ont été refusés. Si un 401 a déjà été envoyé avec le même challenge et que le user agent a déjà tenté la connexion au moins une fois, l’utilisateur DEVRAIT se voir présenter l’entité qui est fournie dans la réponse car elle pourrait inclure des informations pertinentes.
+402 Payment required
+Réservé pour un usage futur.
+403 Forbidden
+Le serveur a compris la requête mais refuse d’y répondre. L'Authorization n’y changera rien et la requête ne DEVRAIT pas être répété. Si ce n’est pas un HEAD et que le serveur veut décrire pourquoi il ne veut pas répondre, il DEVRAIT décrire la raison du refus dans le corps.
+404 Not Found
+Le serveur n’a rien trouvé correspondant à l’URI de requête. Le serveur DEVRAIT utiliser un 410 s’il sait qu’une vieille ressource est indisponible et n’a pas d’adresse de forward. Ce statut est aussi utilisé quand le serveur ne veut pas exactement révélé pourquoi la requête a été refusée ou quand aucune autre réponse n’est applicable.
+405 Method Not Allowed
+La méthode spécifiée n’est pas permise sur l’URI. La réponse DOIT inclure Allow avec la liste des méthodes permises.
+406 Not Acceptable
+La ressource ne peut générer que des entités de réponse dont les caractéristiques ne sont pas acceptables au regard des Accept*.
+A moins que ce soit un HEAD, la réponse DEVRAIT inclure une entité contenant la liste des caractéristiques des entités disponibles et de leurs emplacements à partir de quoi le user agent ou le user pourra faire un choix. Le format de cette entité est spécififé dans Content-Type.
+407 Proxy Authentication Required
+Similaire à 401 mais indique que le client doit d’abord s’identifier au niveau du proxy. Le proxy DOIT retourner un Proxy-Authenticate. Le client PEUT répéter la requête avec le bon Proxy-Authorization.
+408 Request Timeout
+Le client n’a pas produit la requête dans le temps que le serveur était prêt à attendre. Le client PEUT répéter la requête sans modification plus tard.
+409 Conflict
+La requête n’a pas pu être traitée à cause d’un conflit avec l’état présent de la ressource. On ne peut renvoyer ce code que si l’utilisateur est en mesure de résoudre le conflit et refaire sa requête. La réponse DEVRAIT contenir assez d’infos pour permettre à l’utilisateur de résoudre le conflit. Ce code est plus susceptible d’arriver sur un PUT.
+410 Gone
+La ressource n’est plus disponible et pas d’adresse pour forward dispo. Si le fait qu’elle ne soit plus disponible n’est pas sûr, on DEVRAIT répondre 404.
+411 Length Required
+Le serveur refuse une requête sans Content-Length. Le client PEUT renvoyer la requête avec le Content-Length..
+412 Precondition Failed
+La précondition placée sur un ensemble d’en-têtes est fausse. Ce code permet au client de placer des préconditions sur les méta de la ressource courante et donc éviter à la méthode d’être appliquée à la mauvaise ressource.
+413 Request Entity Too Large
+L’entité fournie est trop grosse pour le serveur accepte ou soit capable de la traiter. Le serveur PEUT fermer la  connexion pour éviter que le client continue sa requête. Si ce refus est temporaire le serveur DEVRAIT inclure un Retry-After indiquant après combien de temps le client PEUT essayer.
+414 Request-URI Too Long
+Le serveur ne peut/veut pas interpréter une URI aussi longue. Ca peut arriver pour un POST transformé en GET par exemple.
+415 Unsupported Media Type
+Le serveur ne supporte le type de l’entité dans la requête.
+416 Requested Range Not Satisfiable
+Un serveur DEVRAIT retourner une réponse avec ce statut si un requête inclut Range et que la plage est complètement en dehors des limites de l’entité demandée. La réponse DEVRAIT inclure un Content-Range avec l’étendue de l’entité. Elle ne DOIT PAS  utiliser le multipart/byteranges.
+417 Expectation Failed
+The expectation donné dans Expect n'a pas pu être respecté par le serveur et si c’est un proxy, il avait une preuve intangible que la requête ne pouvait être traitée par le serveur au prochain hop.
+500 Internal Server Error
+Une condition inattendue a empêché le serveur de répondre à la requête.
+501 Not Implemented
+Le serveur ne supporte pas la fonctionnalité requise pour répondre. C’est la réponse appropriée quand le serveur ne reconnaît pas la méthode et n’est capable de la supporter pour aucune ressource.
+502 Bad Gateway
+Le proxy ou le gateway a reçu une réponse invalide du serveur suivant qu’il a contacté pour essayer de répondre à la requête.
+503 Service Unavailable
+Le serveur ne peut répondre à cause d’une surcharge ou d’une maintenance.
+504 Gateway Timeout
+Le proxy ou le gateway n'a pas reçu de réponse à temps du serveur spécifié dans l’URI ou d’un autre serveur. Les proxies retournent souvent un 400 ou un 500 en cas de timeout pour DNS lookups.
+505 HTTP Version Not Supported
+La réponse DEVRAIT contenir une entité décrivant pourquoi la version n’est pas supportée et quels autres protocoles sont supportés par le serveur.
+Les mécanismes d’authentification offerts par HTTP : basic et digest.
+
+Négociation de contenu
+La négociation de contenu permet de choisir la meilleure représentation possible quand plusieurs options sont disponibles.
+Toute réponse ayant un corps est sujet à négociation.
+2 types de négociation : au niveau serveur et au niveau agent.
+Au niveau du serveur la sélection se base sur les représentations disponibles de la réponse et le contenu des headers de la requête. Cette négociation est avantageuse quand l’algo de sélection est difficile à décrire au user agent ou quand le serveur désire envoyer sa meilleure prémonition au client pour éviter les aller-retours si elle est correcte. Pour aider le serveur, le client peut inclure les headers Accept*.
+Les désavantages de la sélection au niveau serveur : impossible de toujours déterminer la meilleure représentation, faire décrire par le user agent ses capacités à chaque requête est inefficace surtout que peu de réponses ont plusieurs représentations, complique l’implémentation du serveur d’origine, peut limiter un cache public pour utiliser la même réponse pour plusieurs requêtes.
+Les headers pour déclencher la négociation de contenu : Accept, Accept-Charset, Accept-Encoding, Accept-Language, User-Agent. Mais le serveur PEUT faire varier la réponse sur n’importe quel élément de la requête.
+Vary peut serveur au serveur pour exprimer les paramètres qu’il utilise pour la négociation de contenu.
+La sélection de la meilleure représentation au niveau de l’agent est effectuée après une première réponse du serveur. La sélection se base sur la liste des représentations disponibles de la réponse inclus dans les headers ou le corps de cette réponse.
+Cette sélection peut être automatique ou manuelle par l’utilisateur.
+Avantageux quand : la réponse pourrait varier sur des dimensions utilisées communément (type, langue, encoding), quand le serveur ne peut pas faire la sélection en examinant la requête, et généralement quand les caches publics sont utilisés pour distribuer la charge du serveur et réduire l’utilisation du réseau.
+Le serveur peut utiliser 300 (Multiple choices) et 406 (Not Acceptable) comme réponse à la négociation avec le User Agent.
+Un autre type de négociation est la négociation transparente qui est une combinaison des 2 précédentes. Quand un cache est fourni avec les meilleures représentations possibles de la réponse et que les dimensions de la variance sont complètement comprises par le cache, alors il devient capable de gérer la négociation du contenu à la place du serveur. Elle permet de distribuer le travail de négociation normalement géré par le serveur d’origine et supprime le délai entraîné par la seconde requête indispensable à la négociation du contenu par le User Agent quand le cache devine correctement le bon format.
+
+Le cache
+HTTP est utilisé pour des systèmes d’information distribués, pouvant tirer parti de caches de réponses.
+Le cache permet d’améliorer la performance en : évitant de faire des requêtes dans certains cas ou évitant de fournir la réponse entière dans d'autres.
+Un cache doit répondre à une requête avec la réponse la plus à jour qu’il détient appropriée pour la requête qui respecte une des conditions suivantes : la réponse a été vérifiée auprès du serveur d’origine pour vérifier son équivalence avec sa réponse, elle est suffisamment « fraiche » et si elle ne l’est pas on la retourne avec des avertissements, la réponse est un 304 approprié, un 305 (Proxy Redirent) ou une erreur.
+Si le cache ne peut pas communiquer avec le serveur , alors le cache DEVRAIT répondre si la réponse peut être correctement retournée sinon il DOIT retourner une erreur ou un avertissement indiquant qu’il y avait une panne de communication.
+Si le cache reçoit une réponse (entière ou 304) qu’il devrait faire suivre au client, et que la réponse n’est plus fraîche, le cache DEVRAIT la faire suivre sans ajouter ni supprimer de Warning. Il ne DEVRAIT tenter de la revalider car durant le temps de transport elle n’est plus fraîche, cela pouvant conduire à une boucle infinie.
+Un User Agent recevant une réponse qui n’est pas fraîche mais sans avertissement PEUT afficher un avertissement pour l’utilisateur.
+Avertissements
+Quand un cache retourne une réponse qui n’est pas de première main ou qui n’est plus assez fraîche, il DOIT attacher un Warning permettant au client de prendre les mesures appropriées.
+Warning peut servir à autre chose qu’une problématique de cache, permettant de distinguer ces réponses de vraies erreurs.
+Un warning est codé sur 3 chiffres. Le premier chiffre indique si le Warning PEUT ou NE PEUT PAS être supprimé d’une entrée de cache stockée après une re validation réussie. Les 1xx décrive le statut de fraîcheur et de revaccination de la réponse et DOIVENT donc être supprimés après une revalidation réussie. Il ne doivent pas être générés par les clients. Les 2xx décrivent certains aspects de l’entité corps ou des en-têtes qui ne sont pas rectifiés par une revalidation et ne DOIVENT donc PAS être supprimés après une revalidation réussie.
+HTTP 1.0 conservent tous les Warning dans la réponse y compris les 1xx. Les warning ont aussi des textes qui PEUT être dans un langage naturel et une indication OPTIONNELLE de quel character set est utilisé.
+On PEUT attacher plusieurs Warning à une réponse même avec les même codes ajoutés par le serveur d’origine ou des caches.
+Le client ou le serveur utilise pour passer les directives Cache-Control. Ces directives surchargent les algorithmes de cache par défaut.
+Le User Agent permet à l’utilisateur de surcharger les mécanismes de cache basiques. Par ex de ne jamais valider les entités en cache même les vieilles. Le User Agent ne DEVRAIT PAS le faire par défaut mais PEUT permettre à l’utilisateur de le configurer.
+13.1.4
