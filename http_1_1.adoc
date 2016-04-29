@@ -47,25 +47,25 @@ value = token | quoted-string
 Il est insensible à la casse. Quand un transfer-coding est appliqué au message, il DOIT inclure "chunked" sauf si le message se termine en fermant la connection. chunked DOIT être le dernier transfer-coding appliqué au message et ne DOIT PAS être appliqué plus d’une fois au corps du message. Cela permet au destinataire de déterminer la longueur du message.
 
 Le chunked encoding modifie le corps du message pour pouvoir le transférer comme un série de gros morceau en en précisant la taille suivi par un trailer OPTIONNEL contenant les headers.
-Chunked-Body     = *chunk
-                                 last-chunk
-                                 trailer
-                                 CRLF
-chunk                    = chunk-size [ chunk-extension ] CRLF
-                                 chunk-data CRLF
-chunk-size             = 1*HEX
-last-chunk              = 1*("0") [ chunk-extension ] CRLF
-chunk-extension    = *( ";" chunk-ext-name [ "=" chunk-ext-val ] )
-chunk-ext-name    = token
-chunk-ext-val         = token | quoted-string
-chunk-data             = chunk-size(OCTET)
-trailer                      = *(entity-header CRLF)
+Chunked-Body = \*chunk
+               last-chunk
+               trailer
+               CRLF
+chunk = chunk-size [ chunk-extension ] CRLF
+        chunk-data CRLF
+chunk-size = 1*HEX
+last-chunk = 1*("0") [ chunk-extension ] CRLF
+chunk-extension = *( ";" chunk-ext-name [ "=" chunk-ext-val ] )
+chunk-ext-name = token
+chunk-ext-val = token | quoted-string
+chunk-data = chunk-size(OCTET)
+trailer = *(entity-header CRLF)
 Un serveur utilisant le chunked transfer-conding ne DOIT PAS utiliser le trailer pour les en-têtes sauf si la requête : contient un header TE indiquant que les trailers sont acceptables dans le transfer-coding de la réponse ou le serveur est celui d’origine de la réponse, les trailer headers sont des méta optionnels et que le destinataire peut utiliser ce message sans eux. Le serveur doit accepter la possibilité qu’ils peuvent être enlevés sur le chemin de retour vers le client.
 
 HTTP utilise les types de média dans le content-type et accept.
-media-type     = type "/" subtype *( ";" parameter )
-type                = token
-subtype          = token
+media-type = type "/" subtype *( ";" parameter )
+type  = token
+subtype = token
 Les paramètres ont la forme attribute/value décrite plus haut.
 Le media-type est insensible à la casse.
 
@@ -78,34 +78,34 @@ Server: Apache/0.8.4
 Ils DEVRAIENT être concis et ne pas être utilisés pour de la pub.
 
 Les tags de langage identifient une langue parlée, écrite ou utilisée pour la communication entre humains.
-language-tag  = primary-tag *( "-" subtag )
-primary-tag     = 1*8ALPHA
-subtag             = 1*8ALPHA
+language-tag = primary-tag *( "-" subtag )
+primary-tag = 1*8ALPHA
+subtag = 1*8ALPHA
 Ex.: en, en-US, en-cokney, i-cherokee, x-pig-latin
 Un primary-tag de 2 lettres est une langue ISO-639 et un subtag de 2 lettres un pays ISO-3166.
 
 Les tags d’entité sont utilisés pour comparer plusieurs entités provenant de la même ressource. Il est utilisé dans Etag, If-Match, If-None-Match et If-Range.
 entity-tag = [ weak ] opaque-tag
-weak        = "W/"
+weak = "W/"
 opaque-tag = quoted-string
 Un tag fort PEUT être partagée par 2 entités d’une ressource s’ils sont équivalents par l’égalité de leurs octets.
 Un tag faible (préfixe W) PEUT être partagée par 2 entités seulement si les entités sont équivalentes et peuvent être échangées sans changement de sémantique.
 Un tag d’entité DOIT être unique pour toutes les versions des entités associées à une ressource particulière. La valeur d'un tag PEUT être utilisée pour des entités obtenues par des requêtes sur différentes URI mais n’implique pas leur équivalence.
 
 Les range sont utilisés dans Range et Content-Range :
-range-unit       = bytes-unit | other-range-unit
-bytes-unit       = "bytes"
+range-unit = bytes-unit | other-range-unit
+bytes-unit = "bytes"
 other-range-unit = token
 La seule unité de range dans HTTP 1.1 est bytes. Les autres valeurs PEUVENT être ignorées.
 
 On distingue 4 types de headers : généraux, pour les requêtes, pour les réponses, pour les entités.
 La constitution d’un header :
 message-header = field-name ":" [ field-value ]
-field-name     = token
-field-value    = *( field-content | LWS )
-field-content  = <the OCTETs making up the field-value and consisting of either *TEXT or combinations of token, separators, and quoted-string>
+field-name = token
+field-value = *( field-content | LWS )
+field-content = <the OCTETs making up the field-value and consisting of either *TEXT or combinations of token, separators, and quoted-string>
 
-Le corps du message :
+Le corps du message
 message-body = entity-body | <entity-body encoded as per Transfer-Encoding>
 Le transfer-encoding étant une propriété du message, il PEUT être ajouté ou supprimé par une application dans la chaîne de requête/réponse.
 La présence d’un corps dans une requête est signalée par l’inclusion d’un Content-Length ou d’un Tranfer-Encoding. Un corps ne doit pas être inclus si la spécification de la méthode de requête ne le permet pas. Un serveur DEVRAIT lire et faire suivre le corps. Si la requête ne contient pas les informations pour l’entité, le message DEVRAIT être ignoré dans le traitement de la requête.
@@ -125,18 +125,18 @@ Quand Content-Length est fourni, il doit correspondre au nombre d’octets du co
 
 general-header = Cache-Control | Connection | Date | Pragma | Trailer | Transfer-Encoding | Upgrade | Via | Warning
 
-Request       = Request-Line
-                        *(( general-header | request-header | entity-header ) CRLF)
-                        CRLF
-                        [ message-body ]
+Request = Request-Line
+          *(( general-header | request-header | entity-header ) CRLF)
+          CRLF
+          [ message-body ]
 
-Request-Line   = Method SP Request-URI SP HTTP-Version CRLF
+Request-Line = Method SP Request-URI SP HTTP-Version CRLF
 Ex.:
 GET /pub/WWW/TheProject.html HTTP/1.1
 GET http://www.w3.org/pub/WWW/TheProject.html HTTP/1.1
 GET * HTTP/1.1
 
-Method         = "OPTIONS" | "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "TRACE" | "CONNECT" | extension-method
+Method = "OPTIONS" | "GET" | "HEAD" | "POST" | "PUT" | "DELETE" | "TRACE" | "CONNECT" | extension-method
 extension-method = token
 Une ressource peut préciser la liste des méthodes qu’elle autorise dans Allow. La liste des méthodes autorisées peut changer dynamiquement.
 Le serveur retourne le statut 405 si la méthode est connue par le serveur mais pas autorisée et 501 s’il n’est pas reconnue ou implémentée. GET et HEAD DOIVENT être supportés par les serveurs à usage normal.
@@ -153,10 +153,10 @@ Un serveur se servant du Host pour déterminer quelle ressource servir doit resp
 
 request-header = Accept | Accept-Charset | Accept-Encoding | Accept-Language | Authorization | Expect | From | Host | If-Match | If-Modified-Since | If-None-Match | If-Range | If-Unmodified-Since | Max-Forwards | Proxy-Authorization | Range | Referer | TE | User-Agent
 
-Response      = Status-Line
-                         *(( general-header | response-header | entity-header ) CRLF)
-                         CRLF
-                         [ message-body ]
+Response = Status-Line
+            *(( general-header | response-header | entity-header ) CRLF)
+            CRLF
+            [ message-body ]
 
 Status-Line = HTTP-Version SP Status-Code SP Reason-Phrase CRLF
 
@@ -174,12 +174,14 @@ Un message en 1.1 contenant un corps DEVRAIT inclure un Content-Type qui défini
 
 entity-length est la taille de l’entité dans le corps avant application du transfer-coding.
 
-Les avantages des connexions HTTP persistantes :
+== Les avantages des connexions HTTP persistantes
+
 - On sauve du CPU en ouvrant/fermant  moins de connections TCP sur les routeurs et les hôtes et la mémoire utilisée pour le contrôle de blocs du TCP peut être sauvegardée sur les hôtes
 - Les requêtes et réponses peuvent être pipelined sur une connexion. Ca permet aux clients de faire de multiples requêtes sans attendre chaque réponse, permettant à une connexion d’être utilisée de façon plus efficace sur moins de temps écoulé
 - La congestion est réduite en réduisant le nombre de paquets causés par les ouvertures TCP
 - La latence est réduite car plus de handshake à l'ouverture
-1.1 utilise les connexions persistantes par défaut. Elles offrent un mécanisme par lequel le client et le serveur peut signaler la fermeture d’une connexion TCP. Quand la clôture est signalée, le client ne DOIT PLUS envoyé de requêtes sur cette connexion.
+
+1.1 utilise les connexions persistantes par défaut. Elles offrent un mécanisme par lequel le client et le serveur peut signaler la fermeture d’une connexion TCP. Quand la clôture est signalée, le client ne DOIT PLUS envoyer de requêtes sur cette connexion.
 Le serveur PEUT supposer que le client a l’intention de maintenir la connexion sauf s’il reçoit un Connection: closed. S’il ferme la connexion, il doit envoyer la même chose au client.
 Du côté du client c’est la même chose.
 Un client utilisant la connexion persistante peut envoyer plusieurs requêtes à la suite (pipeline) sans en attendre la réponse. Le serveur DOIT répondre aux requêtes dans le même ordre.
@@ -209,7 +211,8 @@ Un proxy ne DOIT PAS faire suivre un Expect reçu d’un 1.0. Il fait continuer 
 Si le client constate que la connexion est fermée, alors qu’il n’est pas directement connecté au serveur et qu’il n’a pas envoyé d’Expect continue, avant même de recevoir un statut du serveur, il DEVRAIT retenter la requête. Dans ce cas, il DEVRAIT tenter la procédure suivante :
 initier une nouvelle connexion au serveur, transmettre les en-têtes, initialiser une variable qui détient la valeur de l’aller retour au serveur pour la connexion ou 5s si ce temps est indisponible, mettre dans T R * 2^N où N est le nombre d’essais précédents, attendre une réponse du serveur pour au plus T secondes, sans réponse après ce temps, transmettre le corps, et s’il constate que la connexion est fermée prématurément recommencer sauf si le nombre d’essais qu’il s’est fixé est terminé.
 Si le client reçoit un statut d’erreur, il ne DEVRAIT PAS continuer et DEVRAIT fermer la connexion s’il n’a pas terminé d’envoyer le message.
-Les méthodes
+
+== Les méthodes
 HEAD et GET ne DEVRAIENT être vues que comme des actions de récupération. Elles sont considérées comme sûres. Ce qui n’empêche pas au serveur d’avoir des effets de bord sur ces méthodes dont le client ne peut être tenu responsable.
 Une méthode est considérée comme idempotente si les effets de bord pour N > 0 requêtes identiques sont les même que pour une seule. GET, HEAD, PUT et DELETE partagent ces propriétés. OPTIONS et TRACE ne DEVRAIENT PAS avoir d’effets de bord donc sont idempotentes de base.
 Une série de requêtes idempotentes n’est pas forcément idempotente.
@@ -218,7 +221,7 @@ OPTIONS
 Permet de voir les options de communication disponibles pour une chaîne de requête/réponse sur l’URI spécifiée. Elle permet au client de déterminer les options et conditions nécessaires liées à une ressource ou les capacités d’un serveur sans requérir d’action sur la ressource ou initier une récupération de la ressource.
 Les réponses à cette méthode ne sont pas cachables.
 Si sa réponse contient un corps, Content-Type DOIT être retourné.
-Si l’URI de requête est *, la requête concerne le serveur en général. Cette requête est perçu comme un ping et peut être utilisée par exemple pour tester la version HTTP d’un proxy.
+Si l’URI de requête est \*, la requête concerne le serveur en général. Cette requête est perçu comme un ping et peut être utilisée par exemple pour tester la version HTTP d’un proxy.
 Sinon la requête s’applique aux options sur la ressource pointée par l’URI.
 Une réponse 200 DEVRAIT inclure les en-têtes pouvant les fonctionnalités optionnelles implémentée par le serveur pour cette ressource (comme Allow) et inclure les extensions non définies par la spéc. Le corps (optionnel) DEVRAIT contenir des infos sur les options de communication. Son format n’est pas spécifié et PEUT être sujet à négociation entre client et serveur. S’il n’y a pas de corps, on DOIT envoyer un Content-Legth: 0.
 On PEUT utiliser Max-Forwards pour cibler un proxy spécifique dans la chaîne de requête. Si un proxy reçoit un OPTIONS sur une URI absolue sur laquelle le roquets forwarding est permis, il DOIT vérifier son Max-Forward. S’il est égal à 0, il ne DOIT PAS faire suivre le message, mais DEVRAIT répondre sur ses options de communication. Si Max-Forward est > 0, il DOIT le décrémenter et faire suivre. Si la requête ne contient pas de Max-Forwards il ne DOIT PAS lui en rajouter.
@@ -255,7 +258,8 @@ Si la requête est valide, la réponse DEVRAIT contenir la requête entière dan
 Les réponses à cet appel ne DOIVENT PAS être cachées.
 CONNECT
 Il est réservé pout un usage avec un proxy qui peut dynamiquement se changer en tunnel (tunnel SSL par ex.).
-Les statuts
+
+== Les statuts
 100 Continue
 Voir plus haut
 101 Switching Protocols
@@ -359,7 +363,7 @@ Le proxy ou le gateway n'a pas reçu de réponse à temps du serveur spécifié 
 La réponse DEVRAIT contenir une entité décrivant pourquoi la version n’est pas supportée et quels autres protocoles sont supportés par le serveur.
 Les mécanismes d’authentification offerts par HTTP : basic et digest.
 
-Négociation de contenu
+== Négociation de contenu
 La négociation de contenu permet de choisir la meilleure représentation possible quand plusieurs options sont disponibles.
 Toute réponse ayant un corps est sujet à négociation.
 2 types de négociation : au niveau serveur et au niveau agent.
@@ -373,19 +377,78 @@ Avantageux quand : la réponse pourrait varier sur des dimensions utilisées com
 Le serveur peut utiliser 300 (Multiple choices) et 406 (Not Acceptable) comme réponse à la négociation avec le User Agent.
 Un autre type de négociation est la négociation transparente qui est une combinaison des 2 précédentes. Quand un cache est fourni avec les meilleures représentations possibles de la réponse et que les dimensions de la variance sont complètement comprises par le cache, alors il devient capable de gérer la négociation du contenu à la place du serveur. Elle permet de distribuer le travail de négociation normalement géré par le serveur d’origine et supprime le délai entraîné par la seconde requête indispensable à la négociation du contenu par le User Agent quand le cache devine correctement le bon format.
 
-Le cache
+== Le cache
 HTTP est utilisé pour des systèmes d’information distribués, pouvant tirer parti de caches de réponses.
 Le cache permet d’améliorer la performance en : évitant de faire des requêtes dans certains cas ou évitant de fournir la réponse entière dans d'autres.
 Un cache doit répondre à une requête avec la réponse la plus à jour qu’il détient appropriée pour la requête qui respecte une des conditions suivantes : la réponse a été vérifiée auprès du serveur d’origine pour vérifier son équivalence avec sa réponse, elle est suffisamment « fraiche » et si elle ne l’est pas on la retourne avec des avertissements, la réponse est un 304 approprié, un 305 (Proxy Redirent) ou une erreur.
 Si le cache ne peut pas communiquer avec le serveur , alors le cache DEVRAIT répondre si la réponse peut être correctement retournée sinon il DOIT retourner une erreur ou un avertissement indiquant qu’il y avait une panne de communication.
 Si le cache reçoit une réponse (entière ou 304) qu’il devrait faire suivre au client, et que la réponse n’est plus fraîche, le cache DEVRAIT la faire suivre sans ajouter ni supprimer de Warning. Il ne DEVRAIT tenter de la revalider car durant le temps de transport elle n’est plus fraîche, cela pouvant conduire à une boucle infinie.
 Un User Agent recevant une réponse qui n’est pas fraîche mais sans avertissement PEUT afficher un avertissement pour l’utilisateur.
-Avertissements
+
+=== Avertissements
 Quand un cache retourne une réponse qui n’est pas de première main ou qui n’est plus assez fraîche, il DOIT attacher un Warning permettant au client de prendre les mesures appropriées.
 Warning peut servir à autre chose qu’une problématique de cache, permettant de distinguer ces réponses de vraies erreurs.
 Un warning est codé sur 3 chiffres. Le premier chiffre indique si le Warning PEUT ou NE PEUT PAS être supprimé d’une entrée de cache stockée après une re validation réussie. Les 1xx décrive le statut de fraîcheur et de revaccination de la réponse et DOIVENT donc être supprimés après une revalidation réussie. Il ne doivent pas être générés par les clients. Les 2xx décrivent certains aspects de l’entité corps ou des en-têtes qui ne sont pas rectifiés par une revalidation et ne DOIVENT donc PAS être supprimés après une revalidation réussie.
 HTTP 1.0 conservent tous les Warning dans la réponse y compris les 1xx. Les warning ont aussi des textes qui PEUT être dans un langage naturel et une indication OPTIONNELLE de quel character set est utilisé.
 On PEUT attacher plusieurs Warning à une réponse même avec les même codes ajoutés par le serveur d’origine ou des caches.
-Le client ou le serveur utilise pour passer les directives Cache-Control. Ces directives surchargent les algorithmes de cache par défaut.
+
+Le client ou le serveur utilise Cache-Control pour passer les directives. Ces directives surchargent les algorithmes de cache par défaut.
 Le User Agent permet à l’utilisateur de surcharger les mécanismes de cache basiques. Par ex de ne jamais valider les entités en cache même les vieilles. Le User Agent ne DEVRAIT PAS le faire par défaut mais PEUT permettre à l’utilisateur de le configurer.
-13.1.4
+Un User Agent ne DEVRAIT pas avoir un comportement non transparent par défaut résultant en un usage inefficace du cache.
+Mais il PEUT être explicitement configuré par l'utilisateur pour invalider régulièrement le cache (Cahe-Control: max-stale=3600).
+Dans ce cas l'User Agent DEVRAIT explicitement indiquer à l'utilisateur si la réponse est stale ou non, ayant l'information du serveur.
+Cela peut être une icône, une dialog box...
+
+Quand un serveur retourne une réponse stale, il DOIT l'indiquer.
+Surtout si la requête nécessitait une réponse fraîche et que le serveur pour des raisons de performance ou dispo lui a retourné du stale.
+Mais la règle générale est de servir du frais si la requête du client le précisait.
+
+Un client PEUT spécifier : l'âge max pour accepter une réponse non validée, le temps minimum restant avant expiration d'une réponse, qu'il accepte du stale jusqu'à un certain nombre max.
+Les 2 premiers rajoutent cependant des contraintes sur le comportement des caches.
+
+Les caches marchent mieux s'ils ne contactent pas le serveur. Pour cela, ce dernier PEUT préciser une expiration explicite dans le futur.
+Les mécanismes d'expiration ne s'appliquent qu'aux réponses prises du cache et pas celles servies directment par le serveur.
+Si le serveur veut forcer la validation des réponses, il PEUT servir des réponses avec des expirations dans le passé.
+Mais pour forcer tous les caches quelque soit leur cnofiguration, il DEVRAIT utiliser `must-revalidate`.
+
+Les caches utilisent des expirations heuristiques, les serveurs ne fournissant pas toujours d'expiration.
+Ils se basent sur d'autres headers comme `Last-Modified` pour estimer une date d'expiration plausible.
+Ils sont à utiliser de façon avertie car ils compromettent la transparence sémantique.
+
+Les hôtes utilisant HTTP, plus particulièrement serveur d'origine et caches, devraient utiliser un mécanisme de synchro de date comme NTP.
+Le protocole impose aux serveurs d'origine de servir `Date`, si possible.
+`Age` permettra pour une réponse cachée de préciser l'âge estimée depuis la génération ou revalidation auprès de l'origine.
+Sa valeur est la somme des temps de détention dans les caches sur le chemin plus le temps de transit dans le réseau.
+*Calcul de l'âge* : max(now - date_value, age_value).
+
+Pour décider si une réponse est stale, on compare la fraîcheur et l'âge.
+*Freshness lifetime* : max_age_value ou expires_value - date_value (Si `Max-Age` n'est pas présent)
+Si ni `max-age, s-maxage` ni `Expires` ne sont présents, le cache déduit la fraîcheur de manière heuristique
+Toute réponse de plus de 24h doit se voir attacher un `Warning` 113.
+Si la réponse a une `Last-Modified`, la valeur heuristique d'expiration ne DEVRAIT pas dépasser une fraction de ce temps, typiquement 10%.
+La réponse est considérée fraîche si sa durée de vie reste supérieure à son âge.
+Un client qui reçoit une réponse cachée pour une ressource fraîche dans son cache PEUT l'ignorer et renvoyer une requête avec `Cache-Control: max-age=0`
+Si le client tente de revalider une entrée de son cache et reçoit une réponse avec une `Date` pus vieille que la sienne il peut répéter la même méthode inconditionnellement pour forcer la validation des caches intermédiaires.
+S'il veut en plus les forcer à obtenir une nouvelle valeur, il utilise `Cache-Control: no-cache`
+
+=== Les validateurs de cache
+Last-Modified, ETag (pratique quand on ne peut stocker des dates de modification).
+Un validateur est considéré fort s'il change quand la ressource change, il est sinon considéré faible.
+Les ETag sont normalement forts mais le protocole fournit un mécanisme pour les tag comme faibles.
+La date de modification est faible, une ressource pouvant être changée plusieurs fois dans la même seconde.
+Les serveurs d'origine DEVRAIT envoyer l'ETag sauf si c'est impossible, PEUVENT envoyer un faible ETag si le fort impacte les performances, DEVRAIT envoyer une `Last-Modified` si possible.
+Un ETag fort change avec l'entité, un faible change quand l'entité significativement d'un angle sémantique.
+Si un ETag est fourni, il DOIT être utilisé par `If-Match` et `If-None-Match`, si `Last-Modified` est fournie il PEUT utiliser `If-Unmodified-Since`.
+Si les 2 sont fournies les headers cités précédemment DEVRAIENT être utilisés.
+
+A moins d'être contraint par un `Cache-Control`, un cache PEUT toujours stocker une réponse réussie comme entrée.
+Les réponses avec un statut 200, 203, 206, 300, 301, 410 PEUVENT être cachées et utilisées en réponse à une requête suivante.
+Les réponses avec un autre statut ne DOIVENT pas être retournées à moins d'avoir un `Cache-Control` le permettant (max-age, s-maxage, must-revalidate, proxy-revalidate, public, private.
+
+Certains headers sont des hop-by-hop et d'autres des E2E (de la source au destinataire). Ces derniers doivent être conservés dans les réponses cachées.
+Les hop-by-hop : Connection, Keep-Alive, Proxy-Authenticate, Proxy-Authorization, TE, Trailers, Transfer-Encoding, Upgrade
+Tous les autres sont des E2E
+Un proxy transparent ne DOIT NI ajouter, NI modifier les headers suivants : Content-Location, Content-MD5, ETag, Last-Modified
+Il ne DOIT PAS modifier Expires dans une réponse
+Dans un message contenant une no-transform dans Cache-Control, il ne doit ni modifier ni ajouter : Content-Encoding, Content-Range, Content-Type
+Un proxy non transparent qui le fait doit ajouter un Warning 214 (Transformation applied) si le message n'en contient pas.
