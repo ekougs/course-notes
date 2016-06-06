@@ -452,3 +452,26 @@ Un proxy transparent ne DOIT NI ajouter, NI modifier les headers suivants : Cont
 Il ne DOIT PAS modifier Expires dans une réponse
 Dans un message contenant une no-transform dans Cache-Control, il ne doit ni modifier ni ajouter : Content-Encoding, Content-Range, Content-Type
 Un proxy non transparent qui le fait doit ajouter un Warning 214 (Transformation applied) si le message n'en contient pas.
+Un proxy transparent ne DOIT pas changer l'entity-length mais PEUT changer le transfer-length.
+
+Quand le cache fait une requête de validation à un serveur et reçoit un 304 (Not Modified) ou un 206 (Partial Content), le cache construit la réponse à renvoyer au client.
+Pour un 304, il utilise son entrée comme entité de la réponse.
+Pour un 206, dont l'ETag ou Last-Modified correspond, il PEUT combiner son entrée avec le contenu reçu.
+Les headers E2E suivent les règles suivantes :
+
+- les Warning 1xx qui DOIVENT être supprimées dans l'entrée et la réponse qu'on fait suivre
+- les Warning 2xx qui DOIVENT être conservés dans l'entrée et la réponse
+- les autres headers de la réponse remplacent ceux de l'entrée
+
+Pour les entrées contenant des subranges d'une entité, le cache PEUT combiner le nouveau subrange avec les existants si :
+
+- La réponse et l'entrée ont un validateur de cache
+- Les validateurs correspondent en utilisant une fonction de comparaison forte
+
+Sinon le cache DOIT utiliser la réponse partielle la plus récente en se basant sur Date ou il prend la réponse si la donnée est manquante.
+
+Le serveur DEVRAIT utiliser le Vary pour indiquer au cache quelles étaient les en-têtes au moment de la négociation de contenu.
+Un cache recevant un Vary à \* ne peut pas répondre à la requête et laisse le serveur traiter.
+Le cache n'utilise son entrée en réponse à une requête contenant un Vary que si toutes les en-têtes de sélection correspondent à la requête originale qui a créé l'entrée (à des espaces près et si les combinaisons d'en-têtes permises correspondent 4.2)
+Si les en-têtes de sélection ne correspondent pas, le cache ne DOIT PAS envoyer de réponse avant de recevoir un 304 du serveur.
+
