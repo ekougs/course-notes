@@ -1,0 +1,57 @@
+# Linux CLI
+:hardbreaks:
+
+## Text-fu
+### cut
+`cut -c 5 sample.txt` : extrait le 5e caractère de chaque ligne
+`cut -f 2 sample.txt` : extrait le 2e champ de chaque ligne avec tab comme délimiteur
+-d pour préciser le délimiteur
+
+### paste
+`paste -s sample.txt` : combine toutes les lignes en une séparées par des tabs.
+-d pour préciser le délimiteur
+
+### head / tail
+`head` pour les lignes de début, 10 premières par défaut
+`tail` pour les lignes de fin, 10 dernières par défaut
+-n pour préciser le nombre de lignes à afficher
+-f avec tail pour "follow" le fichier en cours de modification (log)
+
+### expand / unexpand
+`expand sample.txt` : transforme les tabs en espaces
+unexpand fait l'inverse
+
+### join / split
+`join file1.txt file1.txt` : joint ligne à ligne les 2 fichiers sur la sortie standard
+`split file.txt` : crée des fichiers de 1000 lignes par défaut à partir du fichier en entrée nommés x** par défaut
+
+### sort
+`sort file1.txt` : pour trier les lignes dans l'ordre naturel ascendant
+-r pour renverser l'ordre, -n par valeur numérique
+
+### tr
+`tr a-z A-Z` : transforme les minuscules tapées dans l'entrée standard en majuscule
+-d ello supprime les lettres elo tapées dans l'entrée standard
+
+### uniq
+Renvoie les lignes uniques dans un fichier ou stream
+-c pour voir le nombre d'occurrences
+-u pour voir les entrées avec une seule occurrence
+-d pour voir les entrées dupliquées
+
+### wc / nl
+Pour voir le nombre total de mots dans un fichier
+Il affiche respectivement le nombre de lignes, de mots et d'octets
+-l, -w, -c respectivement pour isoler ces données
+nl affiche les lignes d'un fichier avec leur index en préfixe
+1. i
+2. like
+
+### grep
+Pour voir une chaîne qui apparaît dans un fichier ou un stream
+-i pour ignorer la casse
+Marche également avec des expressions régulières
+
+## Vim / Emacs
+
+Source : https://linuxjourney.com/
