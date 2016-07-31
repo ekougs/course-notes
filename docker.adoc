@@ -1,0 +1,102 @@
+= Docker
+:hardbreaks:
+
+== Démarrer
+`boot2docker start`
+`boot2docker up` : démarre
+`boot2docker init` : crée la VM
+`$(boot2docker shellinit)` : initialise les variables d’environnement pour boot2docker
+`boot2docker delete` : supprime la VM
+`boot2docker ip` : l’adresse de boot2docker indispensable pour communiquer avec ses images.
+`boot2docker upgrade` : doit être stoppé avant
+`boot2docker ssh` : pour se connecter à la machine virtuelle
+
+== Intéragir avec un conteneur
+`docker stop web` : stoppe l’image web
+`docker rm web`
+
+== Démarrer un conteneur
+`docker run -t -i --name ubuntu ubuntu:14.04 /bin/bash` : démarre ubuntu sur le bash (exit pour en sortir)
+`docker run -d ubuntu:14.04 /bin/sh -c "while true; do echo hello world; sleep 1; done"` : permet d’exécuter le script entre parenthèses
+L’option -p permet de spécifier un port ou une interface plus port (dynamique ou pas) comme localhost::8080 ou localhost:8080.
+`docker start <CONTAINER_ID>` pour démarrer un container déjà construit
+Le programme en ENTRYPOINT tourne avec le pid 1
+
+== Communiquer entre conteneurs
+2 façons de faire interagir des containers avec docker. Par leurs ports et/ou en les liant.
+--link <name or sha1>:alias permet de lier à une autre image. Une bonne pratique est de les nommer pour en comprendre la fonction.
+Lier ds conteneurs leur permet de partager des informations sans passer par les ports. Ca permet de lancer les conteneurs sans avoir forcément besoin d’exposer ses ports.
+Les informations de connectivité sont exposées de 2 façons : les variables d’environnement, mise à jour du fichier /etc/hosts.
+Variables d’environnements pour link
+Le flag link crée automatiquement certaines variables d’environnement et expose les variables d’environnement du conteneur source, notamment celles de la commande ENV dans le Dockerfile ou des flags -e, —env, —env-file. Cela permet la découverte programmatique à l’intérieur du conteneur cible.
+Il crée une <alias>_NAME par conteneur cible listé dans le flag link. Pour chaque port exposé, il crée un préfixe sous la forme <name>_PORT_<port>_<protocol> (avec protocol = à TCP ou UDP) qui va permettre de définir : prefix_ADDR (comme 172.17.0.82), prefix_PORT (comme 8080), prefix_PROTO (comme tcp). Il crée une variable contenant le premier port exposé (le plus petit) sous <alias>_PORT.
+Enfin il crée pour chaque var d’environnement dans le conteneur cible il crée un <alias>_ENV_<name>.
+Il faut par contre faire attention aux adresses IP stockées dans les variables d’environnement qui ne sont pas automatiquement mises à jour quand le conteneur source est redémarré. Il est donc recommandé d’utiliser /etc/hosts pour la résolution d’IP.
+Fichier /etc/hosts avec link
+Il rajoute des lignes pour les cibles dans ce fichier sous la forme :
+172.17.0.5 webdb 6e5cdeb2d300 db
+On peut alors par exemple directement faire un ping <alias> plutôt que d’utiliser l’adresse IP.
+Quand on redémarre le conteneur source, les adresses sont mises à jour.
+
+== Informations sur le conteneur
+`docker inspect -f "{{ .HostConfig.Links }}" container_name` pour afficher les conteneurs liés à container_name.
+`docker port mysite` : affiche les ports (http et tcp) sur lesquels sont lancés mysite
+`docker logs container_name` : affiche les logs de la sortie standard. Avec -f fait comme un tail -f.
+`docker inspect container_name` : retourne un json avec des informations sur le conteneur
+`docker inspect -f "{{ .Name }}" container_name` : filtre le contenu du json renvoyé
+`docker ps -l` : voir les containers démarrés
+
+== Dockerhub
+`docker pull image_name` : télécharge l’image de docker hub
+`docker login` : se connecter à dockerhub (peut être fait avec l’interface web)
+`docker images` : liste les images sur notre hôte
+On peut personnaliser en mettant à jour une image et en la poussant ou en créant un Dockerfile pour spécifier les instructions pour créer une image.
+`docker commit -m 'Comment' -a 'Author Name' image_sha1 ouruser/sinatra:v2`
+Les commit sont fastidieux et sont plus difficiles à maintenir. On leur préfère les DockerFile.
+Le commit permet de sauvegarder les couches créées pendant l'interaction avec le container comme `apt-get install`
+`docker push <image:tag>` pour pousser sur le hub. Les couches qui sont déjà sur le hub ne sont pas poussées à nouveau
+
+== Dockerfile
+Dans un tel fichier on a :
+# Des commentaires
+INSTRUCTION statement
+Les instructions :
+- FROM + image
+- MAINTAINER name <mail@company.com>
+- RUN instruction_system
+- CMD pour lancer la première instruction au lancement du container. Cette commande est surchargée si le conteneur est lancé en précisant une commande
+- ENTRYPOINT permet de préciser une commande à laquelle on pourra préciser des arguments en lançant le container en faisant un runnable
+- VOLUME
+- EXPOSE <container-port-1> <container-port-2> pour exposer des ports
+
+== Interagir avec son image
+A partir d’un DockerFile, on peut lancer l’instruction :
+`docker build -t ouruser/sinatra:v2 .` : le contexte permet d'embarquer les fichiers qui y sont. -t permet de tag
+`docker tag image_sha1 user/image_name:devel` : pour tagger l’image dont on a mis le sha1 après sa construction
+Docker tag sert aussi à préciser le remote à quoi correspond une image locale pour pouvoir le push sur dockerhub
+`docker tag <local:tag> <remote:tag>`
+`docker rmi image_name` : supprime l’image sur l'hôte
+
+== Couches
+Quand on construit une image docker, on a une image de base
+Chaque instruction dans le Dockerfile construit une couche readonly
+Seule la dernière couche, le container, est writable
+Ce sont ces couches, cachables, qui permettent de lever rapidement une machine
+
+== Exécuter
+`docker exec <CONTAINER_ID> <COMMAND>`
+
+== Les volumes
+`docker run -d -P -v $HOME/site:/usr/share/nginx/html --name mysite nginx` : monte $HOME/site sur /usr/share/.../html.
+Les changements de volume sur une image ne sont pas poussés sur le hub
+Ils persistent quand le container est effacé
+Peuvent être mappés sur le host et les partager entre containers
+Utile pour les tests mais à éviter en production
+Les fichiers créés pendant une session sur le volume ne sont pas gardés quand le conteneur est stoppé
+
+== Ports
+`docker run -d -P --name web nginx` : lance en arrière plan (-d) une machine nginx nommé web en montrant les ports automatiquement publiés et mappés (-P)
+`-p 8080:80` expose le port 80 du container sur le 8080 du host
+
+
+http://viget.com/extend/how-to-use-docker-on-os-x-the-missing-guide
