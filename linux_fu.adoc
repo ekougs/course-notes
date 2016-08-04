@@ -103,4 +103,34 @@ Column meaning:
 
 `pwd` to change password, yourself or another user when root
 
+== Permissions
+r: read, w: write, x: exec, -: empty
+`ls -l` : to see permissions ; in the first column filetype (d for dir) followed by permission grouped by 3 characters, user, group, others
+`chmod u+x` add exec permission to user
+`chmod ug-w` remove write permission to user and group
+`chmod 755` rwx permission to user, and rx permission to group and others. r = 4, w = 2, x = 1.
+`chown` to change user or user:group ownership
+`chgrp` to change group ownership
+`umask 021` take away default set of permissions. Means user has all access (none has been taken away), group has r-x, and exec for others.
+**Default umask** on most distros is **022**. To persist umask, startup file, .profile, must be modified.
+passwd command is able to modify /etc/shadow because it has the **s** permission. It allows the users who launched the program to get the program file owner's permission as well as execution permission
+So when user run password command it runs as root because the latter owns passwd program.
+`chmod 4755` to add it (the first 4) or `chmod u+s`
+A capital S is the same as s without exec right.
+Groups also has an s permission ; `chmod 2755` to add it(the first 2) or `chmod g+s`
+
+The example with passwd does not work by privilege elevation like sudo.
+The process has an **effective UID** giving it right accesses.
+It also has **real UID** which is the user that launched the process.
+It finally has a **saved UID** to switch between real and effective.
+The latter is helpful to run with elevated privileges just when it needs to.
+When running passwd, effective is root. But you can't change another user password has the program can access your real UID and assess that you cannot do it.
+When root access is not needed, it is not used.
+Most of the time effective and real are the same.
+
+Last permission is the sticky bit and means that only the owner or root user can delete or modify a file.
+Useful for shared directories.
+`chmod 1755` to add it(the first 1) or `chmod +t`
+When `ls -l` it is the t after the permission
+
 Source : https://linuxjourney.com/
