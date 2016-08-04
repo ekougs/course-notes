@@ -53,5 +53,16 @@ Pour voir une chaîne qui apparaît dans un fichier ou un stream
 Marche également avec des expressions régulières
 
 ## Vim / Emacs
+/ pour checher un mot (regex), n pour aller vers l'avant, N pour revenir en arrière
+h pour gauche, k pour haut, j pour bas, l pour droite
+i: insérer du texte après curseur
+O: insérer du texte sur la ligne précédente
+o: insérer du texte sur la prochaine ligne
+a: ajoute du texte après le curseur
+A: append text at the end of the line
+x: delete selected text
+dd: delete current line
+y: yank or copy selection
+
 
 Source : https://linuxjourney.com/
