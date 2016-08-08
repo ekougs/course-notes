@@ -44,8 +44,9 @@ Pour voir le nombre total de mots dans un fichier
 Il affiche respectivement le nombre de lignes, de mots et d'octets
 -l, -w, -c respectivement pour isoler ces données
 nl affiche les lignes d'un fichier avec leur index en préfixe
-1. i
-2. like
+
+. i
+. like
 
 === grep
 Pour voir une chaîne qui apparaît dans un fichier ou un stream
@@ -72,34 +73,39 @@ Non human users: root (most powerful), superuser. Non human users may be used to
 `su` to substitute to any user
 
 `/etc/passwd`: contains user information
-Column meaning:
-1. Username
-2. User's password type. Actual passwords are stored in /etc/shadow. **x** means it is stored in /etc/shadow/, * means that user has no login access
-3. UID
-4. GID
-5. GECOS: comment about user or account ; comma delimited
-6. Home directory
-7. User's shell
+Columns
+
+. Username
+. User's password type. Actual passwords are stored in /etc/shadow. **x** means it is stored in /etc/shadow/, * means that user has no login access
+. UID
+. GID
+. GECOS: comment about user or account ; comma delimited
+. Home directory
+. User's shell
+
 This file can be modified by hand or with `vipw` but best left to tools like `useradd`, `userdel`
 `/etc/passwd`: contains user authentication information
-Column meaning:
-1. Username
-2. Encrypted password
-3. Date of last password change
-4. Min password age: nb of days
-5. Max password age: nb of days
-6. Password warning period: nb of days before a password is going to expire
-7. Password inactivity period: nb of days after a password has expired to allow login with their password
-8. Account expiration date: date that user will not be able to login
-9. Reserved field for future use
+Columns
+
+. Username
+. Encrypted password
+. Date of last password change
+. Min password age: nb of days
+. Max password age: nb of days
+. Password warning period: nb of days before a password is going to expire
+. Password inactivity period: nb of days after a password has expired to allow login with their password
+. Account expiration date: date that user will not be able to login
+. Reserved field for future use
+
 The system doesn't solely rely on this file but may use other mechanisms such as PAM to replace authentication
 
 `/etc/group`: contains group information
-Column meaning:
-1. Group name
-2. Group password: no need to set group password because of elevated privilege mechanism like sudo. * in this field
-3. GID
-4. List of users
+Columns
+
+. Group name
+. Group password: no need to set group password because of elevated privilege mechanism like sudo. * in this field
+. GID
+. List of users
 
 `pwd` to change password, yourself or another user when root
 
@@ -132,5 +138,100 @@ Last permission is the sticky bit and means that only the owner or root user can
 Useful for shared directories.
 `chmod 1755` to add it(the first 1) or `chmod +t`
 When `ls -l` it is the t after the permission
+
+== Processes
+`ps` list running processes
+Columns
+
+. PID
+. TTY: controlling terminal associated with process
+. STAT: Status code
+. TIME: total CPU usage time
+. CMD: Name of executable/command
+
+`ps aux` a displays all processes running, u shows more details about processes, x lists all that don't have any TTY associated
+Columns
+
+. USER
+. PID
+. %CPU: CPU time used divided by the time the process has been running
+. %MEM: Ratio of the process's resident set size to the physical memory on the machine
+. VSZ: Virtual memory usage of the entire process
+. RSS: Resident set size, the non-swapped physical memory that a task has used
+. TTY
+. STAT
+. START: start time
+. TIME
+. COMMAND
+
+`top` gives real time information about processes. Refreshed by default every 10 seconds
+
+2 types of terminals: **regular terminal devices** and **pseudoterminal devices**
+`Ctrl+Alt+F1` to get into TTY1, a regular TTY. Exit with `Ctrl+Alt+F7`
+Pseudoterminals are the one with the following format pts/*. Shell is launched under a pts.
+Because processes are bound to terminal, shutting it down also closes the associated processes.
+Processes run as daemon, launched at the start and terminated when the system is shutdown, have no TTY associated thus there is a **?** in the corresponding column
+Process: system allocates memory, CPU, I/O to make a program run. process is an instance of a running program.
+The kernel is in charge of processes.
+It loads the code in memory, determines and allocates resources and keeps tabs on each process to know at least :
+
+. Status of the process
+. Resources the process is using and receives
+. The process owner
+. Signal handling
+
+At the end of its execution, the used resources are freed up for other processes
+When a new process is created, an existing process clones itself using a fork system call that creates a mostly identical child process.
+The latter takes a parent PID, PPID, and can use the same program its parent was using before or more often use execve system call to launch up a new program.
+The system call destroys the memory management put in place by the kernel and sets up a new one for the new program.
+`ps l` to have long format and watch this into action. The PPID of the ps l line is the PID of the line containing the shell.
+The first process that permits to launch other is created at boot up time and is called `init` with PID 1.
+It runs with root priveleges and runs many processes that keep the system running.
+
+A process can exit using the _exit system call and free up resources for reallocation.
+It uses a termination status to inform the kernel it terminates. A status of 0 means the process succeeded.
+But the parent process then need to acknowledge the termination by using wait system call and check the child termination status.
+Orphan processes (parents die first) are put under the care of init who will eventually call wait system so they can die.
+When a child terminates but parent has not called wait yet, kernel turns it into zombie process.
+Resources it used are freed but there is still an entry in process table.
+Zombies cannot be killed as they are technically dead.
+They are "reaped" when parent call wait system otherwise it will be init's responsibility.
+Too many zombies take up space on process table and may prevent other processes from running
+
+Signal is a notification to process that something happened.
+A signal generated by some event (user who types special keys, hardware/software issues), is delivered and then in a pending state.
+The process may then ignore it, catch and perform special routine, terminate, block it depending on its mask.
+Common signals:
+- SIGHUP or HUP or 1: Hangup, sent when the terminal is closed
+- SIGINT or INT or INT: Interrupt == Ctrl+C
+- SIGKILL or KILL or 9: Kill, doesn't allow cleanup
+- SIGTERM or TERM or 15: Software termination, allows some cleanup first
+- SIGSTOP or STOP: Stop, suspend a process
+
+`kill <PID>`: Sends by default TERM but a particular signal can be specified with a -.
+
+Processes use CPU for a small time slice and then pause to allow another to get CPU time.
+Normally they should all get an equal amount of CPU time.
+However we can influence the CPU by setting niceness/priority.
+High number has lower priority. Niceness can be negative.
+`nice -n 5 apt upgrade` to launch apt upgrade and set process niceness to 5.
+`renice 10 -p 3245` set process with PID 3245 niceness to 10.
+
+STAT values:
+
+. R: running or runnable
+. S: interruptible sleep, waiting for an event to complete, such as input from console
+. D: uninterruptible sleep, processes that cannot be killed or interrupted with a signal, to make them go away, reboot or fix the issue
+. Z : Zombie
+. T: Stopped
+
+In Linux, everything is a file, even processes.
+Corresponding filesystem is `/proc`.
+`cat /proc/<PID>/status` for example.
+
+`sleep <PID> &` ampersand makes it run in the background
+`jobs` to see what is executing in the background
+`Ctrl-Z` then `bg` to send existing process to the background.
+`fg <PID>` to bring it to the foreground.
 
 Source : https://linuxjourney.com/
