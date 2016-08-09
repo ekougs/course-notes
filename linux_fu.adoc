@@ -64,6 +64,7 @@ A: append text at the end of the line
 x: delete selected text
 dd: delete current line
 y: yank or copy selection
+TODO
 
 == User management
 System uses UID to manage users, usernames being just friendly way to associate users with their identification
@@ -233,5 +234,62 @@ Corresponding filesystem is `/proc`.
 `jobs` to see what is executing in the background
 `Ctrl-Z` then `bg` to send existing process to the background.
 `fg <PID>` to bring it to the foreground.
+
+== Packages
+TODO
+
+== Devices
+`ls /dev`
+`ls -l /dev`
+Columns:
+
+. Permissions
+. Owner
+. Group
+. Major Device Number
+. Minor Device Number
+. Timestamp
+. Device name
+
+Device types on the first bit of permissions: c (character), b (block), p (pipe), s (socket)
+
+Character is a device transferring data one character at the time.
+Block transfer data in large fixed-sized blocks.
+Pipe facilitates communication between 2 or more processes (data are sent to a process instead of a device).
+Socket is similar to pipe but can communicate with many processes at once.
+The major and minor numbers characterize a device. These numbers are separated by a comma when ls -l on /dev.
+The major represents the device driver that is used, the minor tells the kernel which unique device it is in this driver class.
+
+If no mass storage present on your machine, chances are it is using Small Computer System Interface (scuzzy).
+It's a protocol used for communication between disks, printers, scanners and other peripherals.
+They have a sd prefix: /dev/sda, first hard disk ; /dev/sda3, 3rd partition on first hard disk
+Pseudo devices are not physically connected, most are character devices : /dev/null ; /dev/zero (discards input and produces a continuous stream of NULL, zero value, bytes ; /dev/random (random numbers)
+Older systems use hd prefix for hard drives instead of sd.
+
+sysfs better manage devices that /dev directory fails to do.
+Virtual filesystem mounted on /sys.
+Gives more detailed information than in /dev.
+/dev allows other programs to access devices, /sys is to view information and manage the device.
+`ls /sys/block/sda`
+
+The old way to create device node `mknod /dev/sdb1 b 8 3` with (1) name of the device, (2) its type, (3) its major and minor numbers
+To remove a device, we rm it in /dev
+`/udev` dynamically creates and removes devices depending on whether they are connected or not.
+`udevd` daemon listens to message from the kernel about connected devices.
+It parses that information and match it with the rules specified in `/etc/udev/rules.d`.
+Depending on that it will most likely create device nodes and symbolic links.
+Rules can be added. But systems already have most common defaults.
+View the udev DB: `udevadm info --query=all --name=/dev/sda`
+
+`lsusb` to list USB devices
+`lspci` to list PCI devices
+`lsscsi` to list SCSI devices
+Not installed by default
+
+`dd` is useful for converting and copying data. It reads input from a file or data stream and writes it to a file or data stream.
+`dd if=/home/pete/backup.img of=/dev/sdb bs=1024`
+if is input file, of is output file, bs (in bytes) for block size. bs can use size metrics like k, 1k <==> 1024.
+count= argument tells how many we should copy. Not necessary when making a basic copy of data but useful for data transfers.
+dd can be used to make backup of anything and restoring it.
 
 Source : https://linuxjourney.com/
