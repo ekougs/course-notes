@@ -292,4 +292,156 @@ if is input file, of is output file, bs (in bytes) for block size. bs can use si
 count= argument tells how many we should copy. Not necessary when making a basic copy of data but useful for data transfers.
 dd can be used to make backup of anything and restoring it.
 
+== Filesystem
+=== Hierarchy
+/: root
+/bin: essential binaries, most basic commands such as ls or cp
+/boot: kernel boot loader files
+/dev: device files
+/etc: core system configuration files
+/home: users' directories
+/lib: holds libraries files that binaries can use
+/media: used as attachment point for removable media like USB
+/mnt: temp mounted filesystems
+/opt: optional application software packages
+/proc: info about currently running processes
+/root: root user home dir
+/run: info about the running system since the last boot
+/sbin: essential system binaries, usually can only be run by root
+/srv: site-specific data served by the system
+/tmp: storage for temp files
+/usr: user installed software and utilities
+/var: used for system logging, user tracking, caches, anything subject to change all the time
+=== Types
+Many different implementations of filesystem. VFS (virtual file system) provides an abstraction layer.
+Thus programs can access them without having to know the implementation.
+A single disk may have several FS depending on its partition.
+
+Journaling is available in most filesystems.
+Actions to be completed are written in a log file (journal) so that if there is any interruption (power loss), the system can recover from it.
+Once finished, the task is marked as done in the journal.
+Filesystems without journal are subject to file corruption and inconstant state when booting back up. They have to check to make sure everything is OK.
+This step may take time.
+Filesystems with don't need this step and boot quicker because just have to look at the journal.
+The system know where you left off even if task is incomplete.
+
+ext4: most current version of native linux filesystem. Compatible with older versions ext2 and 3 and supports disk volumes up to 1 exabyte and file size up to 16 TB.
+btrfs: "Better or Butter FS" new linux FS that comes with snapshots, incremental backups, performance increase and much more. Not quite stable and compatible yet.
+xfs: high performance journaling FS, great for a system with large files such as media server
+NTFS and FAT: windows FS
+HFS+: Macintosh FS
+`df -T`: display information about disk, including partition FS
+
+=== Disk anatomy
+Partitions are reprensented as block devices (/dev/sda1).
+Every disk has a partition table containing information about where partitions begin, end, if it is bootable, disk sectors it owns, etc.
+2 main partition schemes are used: Master Boot Record (MBR), GUID Partition Table (GPT)
+Partitions cannot overlap. Disk not affected to a partition is free space.
+Partition can have a specific filesystem or be dedicated to swap.
+
+MBR
+- Traditional, was used as a standard
+- Can have primary, extended and logical partitions
+- limit of 4 primary partitions
+- primary may be turned to extended to make additional partitions. Inside extended, logical partitions can be added
+- supports disks up to 2 TB
+
+GPT
+- becoming the new standard
+- one type of partition
+- each partition has a GUID (globally unique ID)
+- used in conjunction with UEFI based booting
+
+Filesystem structure
+- boot block: located in the first few sectors, contains information used to boot the OS rather than the filesystem
+- super block: single block after the boot block; contains info about the filesystem, such as the size fo the inode table, size of logical blocks and of the filesystem
+- Inode table: like a DB managing our files. Each file or dir has a unique entry and it has various information about the file
+- Data blocks: actual data for the files and dir
+
+`sudo parted -l`  to display information about disk and partition table
+
+=== Disk partitioning
+`fdsik` supports MBR but not GPT
+`parted` supports both MBR and GPT. Its GUI version is `gparted`
+`gdisk` supports GPT but not MBR
+`mkpart primary 123 4567` to create, with first number being the start point and the other the end point.
+Each partition has these information.
+`resize 2 123 4567` to resize, partition number, start point and end point.
+After the partition, we can create a FS: `sudo mkfs -t ext4 /dev/sdb2`
+
+=== Mount/umount
+Used to mount/unmount device to a dir
+`sudo mount -t ext4 /dev/sdb2 /mydrive`
+If the device name changes (kernel names them in the order it finds them), we can use UUID instead of a name:
+`sudo blkid`
+Then the mount command is `sudo mount UUID=$UUID /mydrive`
+To mount automatically FS at startup, we can add them to a file called `/etc/fstab`
+A line contains following info:
+
+- UUID
+- Mount point: dir the FS is mounted to
+- FS type
+- Options
+- Dump: used by the dump utility to decide when to make a backup, should be set to 0
+- Pass: used by fsck to decide what order FSs should be checked, if 0, not checked
+
+=== Swap
+Used to allocate virtual memory to our system. The system uses this partition to swap pieces of memory of idle processes to avoid being bogged on memory
+To create it nothing should be on the partition.
+`mkswap /dev/sdb2` to initialize
+`swapon /dev/sdb2` to enable
+To make it persist on bootup, add an entry to `/etc/fstab`
+To remove it, `swapoff /dev/sdb2`
+General advice is to allocate twice the RAM
+
+=== Disk usage
+`df -h` shows the utilization of the currently mounted FS
+`du -h $dir` to show the disk usage of $dir
+
+=== Repair FS
+Through `fsck`
+Usually run when booting up
+When launching manually (because FS is f* up), be sure to be on an unmounted disk
+`sudo fsck /dev/sda`
+
+=== inodes
+inode table is the table that manages the files in a FS
+inode is an entry in this table and there is one for each file
+This entry describes everything about the file:
+
+- File type: regular file, dir, char device, etc.
+- Owner
+- Group
+- Access permissions
+- Timestamps: mtime (last modification), ctime (last attribute change), atime (last access)
+- nb of hardlinks to the file
+- size of tjhe file
+- nb of blocks allocated to the file
+- pointers to the data blocks of the file (most important)
+
+The space for inodes is allocated when the FS is created
+There are algorithms to compute how much inode space is needed depending on the volume of the disk.
+You can run out of space for inodes and thus being unable to create new files (storage depends on data and data DB), but that occurs rarely.
+`df -i` to see how many inodes are left on your system
+inodes are identified by number ; it is sequentially assigned when the file is created
+this link may be deleted because file does not exist anymore ; it is then reused for another file
+`ls -li` to view the inode associated to file (1st field)
+inodes point to the actual data location on disk, because it is probably not stored sequentially.
+In a typical FS, each inode contains 15 pointers.
+The first 12 point directly to the data blocks.
+The 14th points to another nested block of pointers.
+The 15th also points to another nested block of pointers
+Small could use the first 12 pointers when larger files can be found with the nest of pointers, but the structure is still the same
+
+=== Links
+Symbolic links, symlinks, are files that link to another file by its filename
+when a symlink is modified, the underlying file gets also modified
+symlinks do not reference by inode so can be used across FS as it uses the filename. inodes are FS dependent.
+Hardlinks create a file with a link to the same inode.
+Hardlinks stay accessible even if the underlying file is deleted.
+`ls -li` third column is the link count (hardlinks)
+when a file is deleted this is decremented and the inode is deleted once the count equals 0
+`ln file_name` for hardlink
+`ln -s file_name` for symlink
+
 Source : https://linuxjourney.com/
