@@ -444,4 +444,57 @@ when a file is deleted this is decremented and the inode is deleted once the cou
 `ln file_name` for hardlink
 `ln -s file_name` for symlink
 
+== Boot the system
+4 stages:
+
+- BIOS: Basic Input/Output System initializes the hardware and make sure with a Power-On Self Test (POST) asserting the hardware is good to go. Its main job is to load up the bootloader.
+- Bootloader: loads the kernel into memory and then starts the kernel with a set of kernel parameters. GRUB is one of the most common and a universal linux standard
+- Kernel: as soon as it is started, it initializes devices and memory and load up the init process
+- Init process: first process that gets started, starts and stops essential service process on the system. 3 major implementations on Linux distributions
+
+=== BIOS
+It performs system integrity checks. a firmware that comes most common in IBM PC compatible computers
+Once the BIOS boots up the hard drive, it searches for the boot block to figure out how to boot up the system.
+Depending on partition type, it'll look to MBR or GPT
+MBR is located in the first 512 bytes. it contains the code to load another program that actually loads up the bootloader
+UEFI, unified extensible firmware interface, was designed to be successor to BIOS, and most hardware comes with UEFI installed
+GPT was intended for use with EFI but is not necessary for booting on a GPT disk
+The first sector of GPT is reserved for a protective MBR to make it possible to boot a BIOS-based machine
+UEFI stores all the information about startup in an .efi file stored on a special partition called EFI system partition on the hardware
+This partition contains the bootloader
+
+=== Bootloader
+Its responsabilities:
+
+- booting into an OS, even non-linux OS
+- select a kernel to use
+- specify kernel parameters
+
+the most common bootloader for linux is GRUB. The others: LILO, efilinux, SYSLINUX
+the kernel parameters for GRUB can be found at startup by pressing the *e* key
+the parameters:
+
+- inintrd: location of initial RAM disk
+- BOOT_IMAGE: location of the root filesystem, the kernel searches inside to find init. represented by its UUID or device name
+- ro: mounts the filesystem as read-only
+- quiet: to avoid displaying message going on in the background during the boot
+- splash: lets the splash screen be shown
+
+=== Kernel
+During bootup, the kernel depends on a temporary root FS containing just the essential modules the kernel needs to get to the rest of the hardware
+In older Linux this was initrd's job (initial ram disk)
+The kernel would mount the initrd, get the necessary bootup drivers, then when it was done loading everything it needed, it would replace teh initrd with the actual root FS
+These days, the kernel uses the initramfs, a temporary root FS built into the kernel itself to load all the drivers for the real root FS and doesn't have to locate initrd
+When all the modules are loaded, the kernel creates a root device and mount the root partition.
+It is mounted in RO mode first so that fsck can run safely and check the system integrity.
+Then it remounts in RW mode and the kernel locates the init program and executes it.
+
+=== Init
+First process to get started and starts all the other essential services on the system
+3 major implementations of init on Linux:
+- System V inint (sysv): traditional init system. sequentially starts and stops processes based on startup scripts. The state of the machine is denoted by runlevels, each one starts and stops the machine in a different way
+- upstart: the init found on older Ubuntu installations. it uses the idea of jobs and events and works by starting jobs that performs certain actions in response to events
+- systemd: the new standard for init and goal oriented. Basically you have a goal you want to achieve and systemd tries to satisfies the goal's dependencies to complete it
+
+
 Source : https://linuxjourney.com/
