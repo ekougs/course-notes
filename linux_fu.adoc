@@ -496,5 +496,34 @@ First process to get started and starts all the other essential services on the 
 - upstart: the init found on older Ubuntu installations. it uses the idea of jobs and events and works by starting jobs that performs certain actions in response to events
 - systemd: the new standard for init and goal oriented. Basically you have a goal you want to achieve and systemd tries to satisfies the goal's dependencies to complete it
 
+== Kernel
+The core of the OS.
+The linux OS can be organized in 3 levels of abstraction.
+The most basic one is hardware including the CPU, memory, HDs, networking ports, etc.
+The next one is the kernel handling processes, memory management, device communication, system calls, set up our FS, etc.
+This level talk to the hardware to make sure it does what the processes have to do.
+The final one is the user space including the shell, the programs we run, the graphics, etc.
+
+=== Privilege levels
+In kernel mode, contrary to user mode, access to hardware is complete.
+In user mode, a small amount of memory and CPU is accessible.
+Doing anything involving reading/writing to disks, controlling the network is done using the kernel mode
+Separating the modes is effective in many cases like for an infected machine that won't have access to the low level.
+These levels of rights are called privilege levels and often described as protection rings.
+2 main levels/modes in x86 architecture.
+Ring #3 is the privilege that user mode applications run in.
+#0 is the privilege the kernel runs in. This ring is given full trust.
+
+=== System calls
+syscall provide the user space a way to request the kernel to do something for us.
+Certain services are available through the syscall API
+These services allow us to read or write to a file, modify memory usage, modify our network, etc.
+Their amount are fixed and the system already has a table of what system calls exist and each one has a unique ID
+A program like ls contains a system call wrapper. Inside it, it invokes that executes a trap.
+The trap is then caught by the system call handler and references the system call in the syscall table.
+ls is executed in non-privileged mode first.
+It then switches the mode to do a lot of things like looking up the syscall number/
+Finally it executes the function you wanted to run.
+
 
 Source : https://linuxjourney.com/
