@@ -1,18 +1,17 @@
 # Cryptography: Week 1
 
 ## Cryptography core
-Secret key establishment
-secure communication: confidentiality (noone in the middle understands the content), integrity (nobody can tamper
+Secret key establishment  
+secure communication: confidentiality (noone in the middle understands the content), integrity (nobody can tamper  
 the message without beign detected)
-digital signature: without being able to copy my digital signature using one of my documents
-Anonymous communication: mix net ==> Anonymous digital cash: preventing cash replication, by exposing identity if cash is spent more than once
+digital signature: without being able to copy my digital signature using one of my documents  
+Anonymous communication: mix net ==> Anonymous   digital cash: preventing cash replication, by exposing identity if cash is spent more than once  
 
-Secure multi-party computation ; for election or private auctions protocols for exemple
-Its goal: compute f(x1, x2, x3, x4) by a trusted authority
+Secure multi-party computation ; for election or private auctions protocols for exemple  
+Its goal: compute f(x1, x2, x3, x4) by a trusted authority  
 Thm: anything that can be done with trusted auth can also be done without
 
-Privately outsourcing computation: process an encrypted query, without knowing the plain content and send back the encrypted results that only the client
-may see
+Privately outsourcing computation: process an encrypted query, without knowing the plain content and send back the encrypted results that only the client may see  
 Zero knowledge: prove that you know the solution of a problem without revealing the solution
 
 3 steps:
@@ -22,28 +21,29 @@ Zero knowledge: prove that you know the solution of a problem without revealing 
 - Prove that breaking the construction under threat model will solve a really hard problem
 
 ## History
-Symmetric cyphers
+### Symmetric cyphers
 ![Symmetric ciphers](cryptography_coursera/symmetric_ciphers.png "Symmetric ciphers")
+
 ### Substitution cypher (BROKEN)
 Each letter is mapped to another                                                                                         
-Caesar cypher is a substitution cypher (a false cypher because no key) which shifts letters given a step
+Caesar cypher is a substitution cypher (a false cypher because no key) which shifts letters given a step  
 |K| = 26! roughly 2^88 which is a good key space size
 Break by letter frequencies or frequencies of pair of letters (digrams) then trigrams
 ### Vigener cipher (BROKEN)
 ![Vigener cipher](cryptography_coursera/vigener_cypher.png "Vigener cipher")
-1. Know the length of the key
+1. Know or guess the length of the key
 2. Pick the first letters in each group of key length, the one with the most occurence is e
 3. The key letter is e minus the corresponding encrypted character
 4. The other key characters are cracked the same way
 When we don’t know the key length we increment the value from 1 with the same process until we find the key
 
 ### Enigma (BROKEN)
-Uses the rotor technique (4) and had a relatively small key space. 26^4 = 2^18 rotor position ==> 2^36 keys due to optional plugboard
-Can be brute force in a matter of seconds
+Uses the rotor technique (4) and had a relatively small key space. 26^4 = 2^18 rotor position ==> 2^36 keys due to optional plugboard  
+Can be brute forced in a matter of seconds
 
-### DES (BROKEN, 1974)
-2^56 keys, block size = 64 bits
-Insecure because may be broken by brute force
+### DES (1974, BROKEN)
+2^56 keys, block size = 64 bits  
+Insecure because may be broken by brute force  
 Today AES (2001) and Salsa20 (2008)
 
 ## Probability crash course
@@ -79,8 +79,8 @@ First secure encryption against cipher text only attacks. K and M are the same s
 
 ![OTP](cryptography_coursera/crypt_10_otp.png "OTP")
 
-Fast but very long keys (as long as the message) not used in practice
-Not secure but has perfect secrecy
+Fast but very long keys (as long as the message) not used in practice  
+Not secure but has perfect secrecy  
 If both parties have a mean to share such long key without being revealed, they should use that mean to share their messages instead !!!
 
 ## Perfect Secrecy (Shannon)
@@ -88,7 +88,7 @@ Cipher text should reveal no info about plain text
 
 ![Perfect secrecy](cryptography_coursera/crypt_11_perfect_secrecy.png "Perfect secrecy")
 
-Given a cipher text, attacker can’t tell if it is either m0 or m1 ==> so no cipher text only attacks possible but other types may be
+Given a cipher text, attacker can’t tell if it is either m0 or m1 ==> so no cipher text only attacks possible but other types may be  
 Perfect secrecy implies that K space size therefore key length must exceed the message space size
 
 ## Pseudo Random Generators
@@ -97,8 +97,8 @@ Expand small seed to a longer pseudo random key
 
 ![Unpredictable PRG](cryptography_coursera/crypt_13_unpredictable_prg.png "Unpredictable PRG")
 
-Stream ciphers using PRG does not have perfect secrecy as key much shorter than the message
-Security will depend on the underlying PRG
+Stream ciphers using PRG does not have perfect secrecy as key much shorter than the message  
+Security will depend on the underlying PRG  
 PRG must be unpredictable because if we know a sufficiently long prefix of the message, like a fixed header in a message, we can
 deduce the rest of the plain text message by recreating G(K)
 
@@ -127,13 +127,13 @@ Project Venona, MS-PPTP (same key used to stream cipher both client and server m
 
 It also used related keys ==> 40,000 frames to recover the seed K
 
-Stream ciphers are never used for disk encryption
+Stream ciphers are never used for disk encryption  
 Because when they are encrypted, they are broken down to blocks. Each block is encrypted. When change occurs in a block, an attacker can spot the exact location where the changes are made looking at the encrypted blocks as the stream cipher is basically an xor, nothing change in the encryption except the fragment that has been changed.
 
 For network traffic, negotiate a key for every session, PRG it and use it to encrypt the whole frames that are transmitted
 
-Stream ciphers provide no integrity, because the cipher text may be modified, and the client will know nothing about it. If we xor it with p, after decryption, the client will see m xor p instead of m and have no information about the actual transmitted m. OTP is said malleable.
-An exemple is changing the sender of an email, if we know the real sender.
+Stream ciphers provide no integrity, because the cipher text may be modified, and the client will know nothing about it. If we xor it with p, after decryption, the client will see m xor p instead of m and have no information about the actual transmitted m. OTP is said malleable.  
+An exemple is changing the sender of an email, if the real sender is known.
 
 ![No integrity for stream ciphers](cryptography_coursera/crypt_19_no_integrity.png "No integrity for stream ciphers")
 
@@ -148,10 +148,10 @@ DVD movies
 
 ![CSS](cryptography_coursera/crypt_21_css.png "CSS")
 
-US regulation only allowed for key of 40 bits = 5 bytes at the time, so that’s the size of the seed
+US regulation only allowed for key of 40 bits = 5 bytes at the time, so that’s the size of the seed  
 Because DVD uses mpeg, we know the 20 bytes prefix.
-So when XORed with the encrypted 20 first encrypted bytes, we have the css/prg 20 first bytes.
-Then we prg the output for 20 bytes using all the combination of 17 bits that may constitute the first part of the seed used to generate.
+So when XORed with the encrypted 20 first encrypted bytes, we have the css/prg 20 first bytes.  
+Then we prg the output for 20 bytes using all the combination of 17 bits that may constitute the first part of the seed used to generate.  
 We substract it to the css we already have. If our guess is correct, we have the second part of the seed.
 
 ![CSS](cryptography_coursera/crypt_22_css.png "CSS")
@@ -180,7 +180,7 @@ A breaks G with advantage (Pr)
 ![Secure PRGs](cryptography_coursera/crypt_28_secure_prgs_definition.png "Secure PRGs")
 
 Finding a truly secure PRG would prove that P != NP
-but good heuristic candidates
+but good heuristic candidates  
 A predictable PRG is insecure because the advantage is non negligible.
 
 ![Insecure if predictable](cryptography_coursera/crypt_29_insecure_if_predictable.png "Insecure if predictable")
@@ -188,3 +188,15 @@ A predictable PRG is insecure because the advantage is non negligible.
 ![Secure if unpredictable](cryptography_coursera/crypt_30_secure_if_unpredictable.png "Secure if unpredictable")
 
 ![Secure if computationnaly undistinguishable](cryptography_coursera/crypt_31_secure_if_computationnaly_indistinguishable.png "Secure if computationnaly undistinguishable")
+
+### Secure cipher
+Attacker's abilities: obtain one ciphertext
+Security requirement: CT should reveal no info about PT (Shannon)
+
+![Semantic security](cryptography_coursera/crypt_32_secrecy_definition.png "Semantic security")
+
+![Semantic security](cryptography_coursera/crypt_33_semantic_security.png "Semantic security")
+
+![Semantic security example](cryptography_coursera/crypt_34_semantic_security_example.png "Semantic security example")
+
+![Stream ciphers semantically secure](cryptography_coursera/crypt_35_stream_ciphers_semantic_secure.png "Stream ciphers semantically secure")
