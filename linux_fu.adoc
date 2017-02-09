@@ -524,6 +524,23 @@ The trap is then caught by the system call handler and references the system cal
 ls is executed in non-privileged mode first.
 It then switches the mode to do a lot of things like looking up the syscall number/
 Finally it executes the function you wanted to run.
+`strace ls` to debug the execution of ls and see how it is executed
+
+=== Kernel
+`uname -r` prints all of the kernel release version
+The kernel may be install or updated separately from the distro
+When a new kernel is installed it usually adds files to /boot
+*vmlinuz* is the actual kernel
+*initrd* is the temporary filesystem before loading the kernel
+*system.map* symbolic lookup table
+*config* kernel configuration settings, can be used to set which modules are loaded
+Old versions of these files may be deleted if /boot runs out of space
+`lsmod` to see the loaded modules and their dependencies
+`sudo modprobe bluetooth` to load bluetooth modules
+use -r to remove a module
+To load on bootup, modifiy `/etc/modprobe.d` dir and add a configuration file
+To avoid loading on bootup, `blacklist module_name` in the configuration file
+
 
 
 Source : https://linuxjourney.com/
