@@ -1,4 +1,4 @@
-= Linux CLI
+he = Linux CLI
 :hardbreaks:
 
 == Text-fu
@@ -541,6 +541,83 @@ use -r to remove a module
 To load on bootup, modifiy `/etc/modprobe.d` dir and add a configuration file
 To avoid loading on bootup, `blacklist module_name` in the configuration file
 
+== Init
+Main purpose of init is to start & stop essential processes on the system
+3 major implementations of init: System V, upstart, systemd
+
+=== SystemV
+This is what you use if you have a `/etc/inittab` file
+It starts and stops processes sequentially
+sys v deals with dependencies through scripts which starts and stops services
+Used because it is relatively easy to solve dependencies
+Performance is not great because one thing, start or stop, at a time
+sys v defines 0 to 6 runlevels for the machine
+0: shutdown
+1: single user mode
+2: multiuser mode without networking
+3: multiuser mode with networking
+4: unused
+5: multiuser mode with networking and GUI
+6: reboot
+
+At each runlevel, it looks into the corresponding configuration directory to
+execute contained scripts
+They are located in `/etc/rc.d/rc[runlevel].d` or `/etc/init.d`
+scripts that start with s (start) or k (kill) will run on startup and shutdown
+The default runlevel the machine boots into is inside `/etc/inittab`
+It is slowly being replaced and runlevels are used in other init implementations to support services
+that are only started or stopped using sys v init scripts
+`service --status-all` list services
+`sudo service networking [start/stop/restart]`
+ Those commands can be used to Upstart services as well
+
+ === Upstart
+Developed by Canonical, the init implmentation on ubuntu for a while, however systemd is used on modern ubuntu
+Created to improve upon the issues with sys v such as strict startup processes, blocking of tasks, etc.
+
+=== systemd
+How it works:
+- systemd loads its config files, usually located in /etc/systemd/system, usr/lib/systemd/system
+- Determines its boot goal, usually default.target
+- Figures out the dependencies of the boot target and activate them
+
+systemd boots into different targets:
+- poweroff.target: shutdown
+- rescue.target: single user modern
+- multi-user.target: multiuser with networking
+- graphical.target: multiuser with networking and GUI
+- reboot.target
+
+It works with units.
+It does not just stop and start services.
+It can mount FS, monitor network sockets, etc.
+It has then different types of units:
+- Service units: services started and stopped, these unit files end in .service
+- Mount units: mount FS, ends in .mount
+- Target units: group other units, ends in .target
+Once a unit is activated, every unit below are activated
+
+Unit file example
+```
+[Unit]
+Description=My Foobar
+Before=bar.target
+
+[Service]
+ExecStart=/usr/bin/foobar
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`systemctl list-units` list units
+`systemctl status networking.service` status of unit
+`sudo systemctl [start/stop/restart/enable/disable] networking.service`
+
+=== Power states
+`sudo shutdown -h now`
+`sudo shutdown -h +2`
+`sudo shutdown -r now` or `sudo reboot` restart
 
 
 Source : https://linuxjourney.com/
