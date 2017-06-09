@@ -619,5 +619,69 @@ WantedBy=multi-user.target
 `sudo shutdown -h +2`
 `sudo shutdown -r now` or `sudo reboot` restart
 
+== Process utilization
+=== Tracking: top
+`top` shows a realtime view of the system utilization by the processes
+
+1st line: same info than `uptime`
+current time, how long the sys has been running, how many logged users, sys load average
+
+2nd line: Nb of tasks running, sleeping, stopped, zombied
+
+3rd line: CPU info
+us: user CPU time, % of CPU time spent running users' processes that aren't niced
+sy: sys CPU time, % of CPU time spent running the kernel and kernel processes
+ni: nice CPU time, % of CPU time spent running niced processes
+id: CPU idle time, % of CPU time spent idle
+wa: I/O wait, % of CPU time spent waiting for I/O. Low value indicates the problem is not disk or network I/O
+hi: hardware interrupts, % of CPU time spent serving hardware interrupts
+si: software interrupts, % of CPU time spent serving software interrupts
+st: steal time, when running VM % of CPU time stolen from your other tasks
+
+4th and 5th: Memory and swap usage
+
+Processes currently in use list
+PID
+USER: owner of the processes
+PR: priority of process
+NI: the nice value
+VIRT: virtual memory used by the process
+RES: physical memory used by the process
+SHR: shared memory of the process
+S: status: S (sleep), R (Running), Z (Zombie), D (uninterruptible), T (stopped)
+
+`top -p $pid` to track a certain process
+
+`lsof` (list open files) lists used files and their associated process
+Useful to see for example which process is using an USB key
+`lsof .`
+
+`fuse -v .` (file user) shows your information about the process that is using the file or the file user
+
+A process have at least one thread.
+Processes operate with their own isolated system resources.
+Threads share these resources among each other.
+At times it is more efficient to be multi-threaded than multi-processed
+`ps $options` to list threads info
+
+`uptime` shows CPU load on your system in 1, 5  and 15 minutes intervals.
+CPU load is the average number of processes waiting to be executed by the CPU.
+Load may be greater than 1 if there are more processes waiting than available core on a single core machine or if the processor is a multicore.
+`cat /proc/cpuinfo` Number of available cores on the system.
+
+`iostat` monitor CPU from IO perspective
+%user - % of CPU utilization executing at the user level
+%nice - % of CPU utilization executing at the user level with nice priority
+%system - % of CPU utilization executing at the system level (kernel)
+%iowait - % of time that CPU or CPUs were idle and the system had an outstanding disk io request
+%steal - % of time spent in unvoluntary wait by the virtual CPU or CPUs while the hypervisor was servicing another virtual processor
+%idle - % of time that CPU or CPUs were idle and the system had no outstanding disk io request
+Second part of the information is the disk utilization
+tps - nb of transfers (IO request) per second issued to the device. Multiple logical requests may be combined into a single IO request
+kB_read/s - Amount of data read from the device expressed in kb per second
+kB_wrtn/s - Amount of data written to the device in kb per second
+
+`vmstat` to monitor memory usage:
+
 
 Source : https://linuxjourney.com/
