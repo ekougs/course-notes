@@ -21,4 +21,4 @@ To write a non equivalent test, we have to test other branches of code.
 - They should have no side effects (call a function that change a global variable or field in a class). Because they may be disable in production code.
 - No silly assertions: assert (1 + 1) == 2
 
-Check something that coudl be wrong if the logic of the written behaviour is broken  
+Check something that could be wrong if the logic of the written behaviour is broken  
